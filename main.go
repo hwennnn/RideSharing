@@ -215,49 +215,71 @@ func driver(res http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	// 	//---PUT is for creating or updating
-	// 	// existing course---
-	// 	if r.Method == "PUT" {
-	// 		var newDriver courseInfo
-	// 		reqBody, err := ioutil.ReadAll(r.Body)
+	//---PUT is for creating or updating
+	// existing course---
+	if req.Method == "PUT" {
+		var newDriver Driver
+		reqBody, err := ioutil.ReadAll(req.Body)
 
-	// 		if err == nil {
-	// 			json.Unmarshal(reqBody, &newDriver)
+		if err == nil {
+			json.Unmarshal(reqBody, &newDriver)
 
-	// 			if newDriver.Title == "" {
-	// 				w.WriteHeader(
-	// 					http.StatusUnprocessableEntity)
-	// 				w.Write([]byte(
-	// 					"422 - Please supply course " +
-	// 						" information " +
-	// 						"in JSON format"))
-	// 				return
-	// 			}
+			if !isDriverJsonCompleted(newDriver) {
+				res.WriteHeader(http.StatusUnprocessableEntity)
+				res.Write([]byte("422 - Please supply driver information in JSON format"))
+				return
+			}
 
-	// 			// check if course exists; add only if
-	// 			// course does not exist
-	// 			if _, ok := courses[params["courseid"]]; !ok {
-	// 				courses[params["courseid"]] =
-	// 					newDriver
-	// 				w.WriteHeader(http.StatusCreated)
-	// 				w.Write([]byte("201 - Course added: " +
-	// 					params["courseid"]))
-	// 			} else {
-	// 				// update course
-	// 				courses[params["courseid"]] = newDriver
-	// 				w.WriteHeader(http.StatusAccepted)
-	// 				w.Write([]byte("202 - Course updated: " +
-	// 					params["courseid"]))
-	// 			}
-	// 		} else {
-	// 			w.WriteHeader(
-	// 				http.StatusUnprocessableEntity)
-	// 			w.Write([]byte("422 - Please supply " +
-	// 				"course information " +
-	// 				"in JSON format"))
-	// 		}
-	// 	}
-	// }
+			if driverid != newDriver.DriverID {
+				res.WriteHeader(http.StatusUnprocessableEntity)
+				res.Write([]byte("422 - The data in body and parameters do not match"))
+				return
+			}
+
+			// check if driver exists; add only if driver does not exist
+			query := fmt.Sprintf("SELECT * FROM Drivers WHERE DriverID='%s'", driverid)
+			databaseResults, err := db.Query(query)
+			if err != nil {
+				panic(err.Error())
+			}
+
+			var isDriverExist bool
+			for databaseResults.Next() {
+				if err != nil {
+					panic(err.Error())
+				}
+				isDriverExist = true
+			}
+
+			if !isDriverExist {
+				query := fmt.Sprintf("INSERT INTO Drivers VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', %d)", newDriver.DriverID, newDriver.FirstName, newDriver.LastName, newDriver.MobileNumber, newDriver.EmailAddress, newDriver.IdentificationNumber, newDriver.CarLicenseNumber, 0)
+
+				_, err := db.Query(query)
+
+				if err != nil {
+					panic(err.Error())
+				}
+
+				res.WriteHeader(http.StatusCreated)
+				res.Write([]byte("201 - Driver added: " + driverid))
+			} else {
+				query := fmt.Sprintf("UPDATE Drivers SET FirstName='%s', LastName='%s', MobileNumber='%s', EmailAddress='%s', CarLicenseNumber='%s', AvailableStatus=%d WHERE DriverID=%s", newDriver.FirstName, newDriver.LastName, newDriver.MobileNumber, newDriver.EmailAddress, newDriver.CarLicenseNumber, newDriver.AvailableStatus, newDriver.DriverID)
+
+				_, err := db.Query(query)
+
+				if err != nil {
+					panic(err.Error())
+				}
+
+				res.WriteHeader(http.StatusAccepted)
+				res.Write([]byte("201 - Driver updated: " + driverid))
+			}
+
+		} else {
+			res.WriteHeader(http.StatusUnprocessableEntity)
+			res.Write([]byte("422 - Please supply driver information in JSON format"))
+		}
+	}
 }
 
 func isDriverJsonCompleted(driver Driver) bool {
@@ -268,7 +290,7 @@ func isDriverJsonCompleted(driver Driver) bool {
 	emailAddress := strings.TrimSpace(driver.EmailAddress)
 	identificationNumber := strings.TrimSpace(driver.IdentificationNumber)
 	carLicenseNumber := strings.TrimSpace(driver.CarLicenseNumber)
-	fmt.Println(driverID, firstName, lastName, mobileNumber, emailAddress, identificationNumber, carLicenseNumber)
+	// fmt.Println(driverID, firstName, lastName, mobileNumber, emailAddress, identificationNumber, carLicenseNumber)
 	return driverID != "" && firstName != "" && lastName != "" && mobileNumber != "" && emailAddress != "" && identificationNumber != "" && carLicenseNumber != ""
 }
 
