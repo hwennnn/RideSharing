@@ -79,6 +79,34 @@ func drivers(res http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(res).Encode(results)
 }
 
+func availableDrivers(res http.ResponseWriter, req *http.Request) {
+	var results []Driver
+	databaseResults, err := db.Query("Select * FROM Drivers WHERE AvailableStatus = 1")
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	for databaseResults.Next() {
+		// map this type to the record in the table
+		var driver Driver
+		err = databaseResults.Scan(&driver.DriverID, &driver.FirstName, &driver.LastName, &driver.MobileNumber, &driver.EmailAddress, &driver.IdentificationNumber, &driver.CarLicenseNumber, &driver.AvailableStatus)
+		if err != nil {
+			panic(err.Error())
+		}
+		results = append(results, driver)
+		fmt.Println(driver.DriverID, driver.FirstName, driver.LastName, driver.MobileNumber, driver.EmailAddress, driver.IdentificationNumber, driver.CarLicenseNumber, driver.AvailableStatus)
+	}
+
+	if len(results) == 0 {
+		res.WriteHeader(http.StatusNotFound)
+		res.Write([]byte("404 - No available drivers are found"))
+	} else {
+		// returns the first available driver in JSON
+		json.NewEncoder(res).Encode(results[0])
+	}
+}
+
 func passengers(res http.ResponseWriter, req *http.Request) {
 	var results []Passenger
 	databaseResults, err := db.Query("Select * FROM Passengers")
@@ -475,6 +503,8 @@ func main() {
 	router.HandleFunc("/api/v1/", home)
 	router.HandleFunc("/api/v1/drivers/", drivers)
 	router.HandleFunc("/api/v1/driver/{driverid}", driver).Methods("GET", "PUT", "POST")
+	router.HandleFunc("/api/v1/available_drivers/", availableDrivers)
+
 	router.HandleFunc("/api/v1/passengers/", passengers)
 	router.HandleFunc("/api/v1/passenger/{passengerid}", passenger).Methods("GET", "PUT", "POST")
 	router.HandleFunc("/api/v1/trips/", trips)
