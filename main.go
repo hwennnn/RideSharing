@@ -56,7 +56,7 @@ func home(res http.ResponseWriter, req *http.Request) {
 }
 
 func drivers(res http.ResponseWriter, req *http.Request) {
-	results := map[int64]Driver{}
+	var results []Driver
 	databaseResults, err := db.Query("Select * FROM Drivers")
 
 	if err != nil {
@@ -70,7 +70,7 @@ func drivers(res http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			panic(err.Error())
 		}
-		results[driver.DriverID] = driver
+		results = append(results, driver)
 		fmt.Println(driver.DriverID, driver.FirstName, driver.LastName, driver.MobileNumber, driver.EmailAddress, driver.IdentificationNumber, driver.CarLicenseNumber, driver.AvailableStatus)
 	}
 	// returns all the courses in JSON
@@ -78,7 +78,7 @@ func drivers(res http.ResponseWriter, req *http.Request) {
 }
 
 func passengers(res http.ResponseWriter, req *http.Request) {
-	results := map[int64]Passenger{}
+	var results []Passenger
 	databaseResults, err := db.Query("Select * FROM Passengers")
 
 	if err != nil {
@@ -92,7 +92,7 @@ func passengers(res http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			panic(err.Error())
 		}
-		results[passenger.PassengerID] = passenger
+		results = append(results, passenger)
 		fmt.Println(passenger.PassengerID, passenger.FirstName, passenger.LastName, passenger.MobileNumber, passenger.EmailAddress)
 	}
 	// returns all the courses in JSON
@@ -100,7 +100,7 @@ func passengers(res http.ResponseWriter, req *http.Request) {
 }
 
 func trips(res http.ResponseWriter, req *http.Request) {
-	results := map[int64]Trip{}
+	var results []Trip
 
 	databaseResults, err := db.Query("SELECT * FROM Trips t INNER JOIN Drivers d ON t.DriverID = d.DriverID INNER JOIN Passengers p ON t.PassengerID = p.PassengerID")
 	// [TripID PassengerID DriverID PickupPostalCode DropoffPostalCode TripProgress DriverID FirstName LastName MobileNumber EmailAddress IdentificationNumber CarLicenseNumber AvailableStatus PassengerID FirstName LastName MobileNumber EmailAddress]
@@ -114,7 +114,7 @@ func trips(res http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			panic(err.Error())
 		}
-		results[trip.TripID] = trip
+		results = append(results, trip)
 
 	}
 	// returns all the courses in JSON
