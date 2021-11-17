@@ -294,6 +294,176 @@ func isDriverJsonCompleted(driver Driver) bool {
 	return driverID != "" && firstName != "" && lastName != "" && mobileNumber != "" && emailAddress != "" && identificationNumber != "" && carLicenseNumber != ""
 }
 
+func passenger(res http.ResponseWriter, req *http.Request) {
+	params := mux.Vars(req)
+	passengerid := params["passengerid"]
+
+	if req.Method == "GET" {
+		query := fmt.Sprintf("SELECT * FROM Passengers WHERE PassengerID='%s'", passengerid)
+		databaseResults, err := db.Query(query)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		var isExist bool
+		var passenger Passenger
+		for databaseResults.Next() {
+			err = databaseResults.Scan(&passenger.PassengerID, &passenger.FirstName, &passenger.LastName, &passenger.MobileNumber, &passenger.EmailAddress)
+			if err != nil {
+				panic(err.Error())
+			}
+			isExist = true
+		}
+
+		if isExist {
+			json.NewEncoder(res).Encode(passenger)
+		} else {
+			res.WriteHeader(http.StatusNotFound)
+			res.Write([]byte("404 - No Passenger found"))
+		}
+
+	}
+
+	if req.Header.Get("Content-type") == "application/json" {
+
+		// POST is for creating new driver
+		if req.Method == "POST" {
+
+			// read the string sent to the service
+			var newPassenger Passenger
+			reqBody, err := ioutil.ReadAll(req.Body)
+
+			if err == nil {
+				// convert JSON to object
+				json.Unmarshal(reqBody, &newPassenger)
+
+				if !isPassengerJsonCompleted(newPassenger) {
+					res.WriteHeader(http.StatusUnprocessableEntity)
+					res.Write([]byte("422 - Please supply passenger information in JSON format"))
+					return
+				}
+
+				if passengerid != newPassenger.PassengerID {
+					res.WriteHeader(http.StatusUnprocessableEntity)
+					res.Write([]byte("422 - The data in body and parameters do not match"))
+					return
+				}
+
+				// check if driver exists; add only if driver does not exist
+				query := fmt.Sprintf("SELECT * FROM Passengers WHERE PassengerID='%s'", passengerid)
+				databaseResults, err := db.Query(query)
+				if err != nil {
+					panic(err.Error())
+				}
+
+				var isPassengerExist bool
+				for databaseResults.Next() {
+					if err != nil {
+						panic(err.Error())
+					}
+					isPassengerExist = true
+				}
+
+				if !isPassengerExist {
+					query := fmt.Sprintf("INSERT INTO Passengers VALUES ('%s', '%s', '%s', '%s', '%s')", newPassenger.PassengerID, newPassenger.FirstName, newPassenger.LastName, newPassenger.MobileNumber, newPassenger.EmailAddress)
+
+					_, err := db.Query(query)
+
+					if err != nil {
+						panic(err.Error())
+					}
+
+					res.WriteHeader(http.StatusCreated)
+					res.Write([]byte("201 - Passenger added: " + passengerid))
+				} else {
+					res.WriteHeader(http.StatusConflict)
+					res.Write([]byte("409 - Duplicate passenger ID"))
+				}
+			} else {
+				res.WriteHeader(http.StatusUnprocessableEntity)
+				res.Write([]byte("422 - Please supply passenger information in JSON format"))
+			}
+		}
+	}
+
+	//---PUT is for creating or updating
+	// existing course---
+	if req.Method == "PUT" {
+		var newPassenger Passenger
+		reqBody, err := ioutil.ReadAll(req.Body)
+
+		if err == nil {
+			json.Unmarshal(reqBody, &newPassenger)
+
+			if !isPassengerJsonCompleted(newPassenger) {
+				res.WriteHeader(http.StatusUnprocessableEntity)
+				res.Write([]byte("422 - Please supply passenger information in JSON format"))
+				return
+			}
+
+			if passengerid != newPassenger.PassengerID {
+				res.WriteHeader(http.StatusUnprocessableEntity)
+				res.Write([]byte("422 - The data in body and parameters do not match"))
+				return
+			}
+
+			// check if driver exists; add only if driver does not exist
+			query := fmt.Sprintf("SELECT * FROM Passengers WHERE PassengerID='%s'", passengerid)
+			databaseResults, err := db.Query(query)
+			if err != nil {
+				panic(err.Error())
+			}
+
+			var isPassengerExist bool
+			for databaseResults.Next() {
+				if err != nil {
+					panic(err.Error())
+				}
+				isPassengerExist = true
+			}
+
+			if !isPassengerExist {
+				query := fmt.Sprintf("INSERT INTO Passengers VALUES ('%s', '%s', '%s', '%s', '%s')", newPassenger.PassengerID, newPassenger.FirstName, newPassenger.LastName, newPassenger.MobileNumber, newPassenger.EmailAddress)
+
+				_, err := db.Query(query)
+
+				if err != nil {
+					panic(err.Error())
+				}
+
+				res.WriteHeader(http.StatusCreated)
+				res.Write([]byte("201 - Passenger added: " + passengerid))
+			} else {
+				query := fmt.Sprintf("UPDATE Passengers SET FirstName='%s', LastName='%s', MobileNumber='%s', EmailAddress='%s'WHERE PassengerID=%s", newPassenger.FirstName, newPassenger.LastName, newPassenger.MobileNumber, newPassenger.EmailAddress, newPassenger.PassengerID)
+
+				_, err := db.Query(query)
+
+				if err != nil {
+					panic(err.Error())
+				}
+
+				res.WriteHeader(http.StatusAccepted)
+				res.Write([]byte("201 - Passenger updated: " + passengerid))
+			}
+
+		} else {
+			res.WriteHeader(http.StatusUnprocessableEntity)
+			res.Write([]byte("422 - Please supply passenger information in JSON format"))
+		}
+	}
+}
+
+func isPassengerJsonCompleted(passenger Passenger) bool {
+	passengerID := strings.TrimSpace(passenger.PassengerID)
+	firstName := strings.TrimSpace(passenger.FirstName)
+	lastName := strings.TrimSpace(passenger.LastName)
+	mobileNumber := strings.TrimSpace(passenger.MobileNumber)
+	emailAddress := strings.TrimSpace(passenger.EmailAddress)
+
+	fmt.Println(passengerID, firstName, lastName, mobileNumber, emailAddress)
+	return passengerID != "" && firstName != "" && lastName != "" && mobileNumber != "" && emailAddress != ""
+}
+
 func main() {
 
 	// Use mysql as driverName and a valid DSN as dataSourceName:
@@ -306,6 +476,7 @@ func main() {
 	router.HandleFunc("/api/v1/drivers/", drivers)
 	router.HandleFunc("/api/v1/driver/{driverid}", driver).Methods("GET", "PUT", "POST")
 	router.HandleFunc("/api/v1/passengers/", passengers)
+	router.HandleFunc("/api/v1/passenger/{passengerid}", passenger).Methods("GET", "PUT", "POST")
 	router.HandleFunc("/api/v1/trips/", trips)
 	// router.HandleFunc("/api/v1/courses", allcourses)
 	// router.HandleFunc("/api/v1/courses/{courseid}", course).Methods("GET", "PUT", "POST", "DELETE")
