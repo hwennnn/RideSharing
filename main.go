@@ -3,8 +3,10 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"strings"
 
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -13,7 +15,7 @@ import (
 )
 
 type Driver struct {
-	DriverID             int64  `json:"driver_id"`
+	DriverID             string `json:"driver_id"`
 	FirstName            string `json:"first_name"`
 	LastName             string `json:"last_name"`
 	MobileNumber         string `json:"mobile_number"`
@@ -27,7 +29,7 @@ type Driver struct {
 }
 
 type Passenger struct {
-	PassengerID  int64  `json:"passenger_id"`
+	PassengerID  string `json:"passenger_id"`
 	FirstName    string `json:"first_name"`
 	LastName     string `json:"last_name"`
 	MobileNumber string `json:"mobile_number"`
@@ -35,9 +37,9 @@ type Passenger struct {
 }
 
 type Trip struct {
-	TripID            int64     `json:"trip_id"`
-	PassengerID       int64     `json:"passenger_id"`
-	DriverID          int64     `json:"driver_id"`
+	TripID            string    `json:"trip_id"`
+	PassengerID       string    `json:"passenger_id"`
+	DriverID          string    `json:"driver_id"`
 	PickupPostalCode  string    `json:"pickup_postal_code"`
 	DropoffPostalCode string    `json:"dropoff_postal_code"`
 	TripProgress      int       `json:"trip_progress"`
@@ -151,58 +153,78 @@ func driver(res http.ResponseWriter, req *http.Request) {
 
 	}
 
-	// if r.Header.Get("Content-type") == "application/json" {
+	if req.Header.Get("Content-type") == "application/json" {
 
-	// 	// POST is for creating new course
-	// 	if r.Method == "POST" {
+		// POST is for creating new driver
+		if req.Method == "POST" {
 
-	// 		// read the string sent to the service
-	// 		var newCourse courseInfo
-	// 		reqBody, err := ioutil.ReadAll(r.Body)
+			// read the string sent to the service
+			var newDriver Driver
+			reqBody, err := ioutil.ReadAll(req.Body)
 
-	// 		if err == nil {
-	// 			// convert JSON to object
-	// 			json.Unmarshal(reqBody, &newCourse)
+			if err == nil {
+				// convert JSON to object
+				json.Unmarshal(reqBody, &newDriver)
 
-	// 			if newCourse.Title == "" {
-	// 				w.WriteHeader(
-	// 					http.StatusUnprocessableEntity)
-	// 				w.Write([]byte(
-	// 					"422 - Please supply course " +
-	// 						"information " + "in JSON format"))
-	// 				return
-	// 			}
+				if !isDriverJsonCompleted(newDriver) {
+					res.WriteHeader(http.StatusUnprocessableEntity)
+					res.Write([]byte("422 - Please supply driver information in JSON format"))
+					return
+				}
 
-	// 			// check if course exists; add only if
-	// 			// course does not exist
-	// 			if _, ok := courses[params["courseid"]]; !ok {
-	// 				courses[params["courseid"]] = newCourse
-	// 				w.WriteHeader(http.StatusCreated)
-	// 				w.Write([]byte("201 - Course added: " +
-	// 					params["courseid"]))
-	// 			} else {
-	// 				w.WriteHeader(http.StatusConflict)
-	// 				w.Write([]byte(
-	// 					"409 - Duplicate course ID"))
-	// 			}
-	// 		} else {
-	// 			w.WriteHeader(
-	// 				http.StatusUnprocessableEntity)
-	// 			w.Write([]byte("422 - Please supply course information " +
-	// 				"in JSON format"))
-	// 		}
-	// 	}
+				if driverid != newDriver.DriverID {
+					res.WriteHeader(http.StatusUnprocessableEntity)
+					res.Write([]byte("422 - The data in body and parameters do not match"))
+					return
+				}
+
+				// check if driver exists; add only if driver does not exist
+				query := fmt.Sprintf("SELECT * FROM Drivers WHERE DriverID='%s'", driverid)
+				databaseResults, err := db.Query(query)
+				if err != nil {
+					panic(err.Error())
+				}
+
+				var isDriverExist bool
+				for databaseResults.Next() {
+					if err != nil {
+						panic(err.Error())
+					}
+					isDriverExist = true
+				}
+
+				if !isDriverExist {
+					query := fmt.Sprintf("INSERT INTO Drivers VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', %d)", newDriver.DriverID, newDriver.FirstName, newDriver.LastName, newDriver.MobileNumber, newDriver.EmailAddress, newDriver.IdentificationNumber, newDriver.CarLicenseNumber, 0)
+
+					_, err := db.Query(query)
+
+					if err != nil {
+						panic(err.Error())
+					}
+
+					res.WriteHeader(http.StatusCreated)
+					res.Write([]byte("201 - Driver added: " + driverid))
+				} else {
+					res.WriteHeader(http.StatusConflict)
+					res.Write([]byte("409 - Duplicate driver ID"))
+				}
+			} else {
+				res.WriteHeader(http.StatusUnprocessableEntity)
+				res.Write([]byte("422 - Please supply driver information in JSON format"))
+			}
+		}
+	}
 
 	// 	//---PUT is for creating or updating
 	// 	// existing course---
 	// 	if r.Method == "PUT" {
-	// 		var newCourse courseInfo
+	// 		var newDriver courseInfo
 	// 		reqBody, err := ioutil.ReadAll(r.Body)
 
 	// 		if err == nil {
-	// 			json.Unmarshal(reqBody, &newCourse)
+	// 			json.Unmarshal(reqBody, &newDriver)
 
-	// 			if newCourse.Title == "" {
+	// 			if newDriver.Title == "" {
 	// 				w.WriteHeader(
 	// 					http.StatusUnprocessableEntity)
 	// 				w.Write([]byte(
@@ -216,13 +238,13 @@ func driver(res http.ResponseWriter, req *http.Request) {
 	// 			// course does not exist
 	// 			if _, ok := courses[params["courseid"]]; !ok {
 	// 				courses[params["courseid"]] =
-	// 					newCourse
+	// 					newDriver
 	// 				w.WriteHeader(http.StatusCreated)
 	// 				w.Write([]byte("201 - Course added: " +
 	// 					params["courseid"]))
 	// 			} else {
 	// 				// update course
-	// 				courses[params["courseid"]] = newCourse
+	// 				courses[params["courseid"]] = newDriver
 	// 				w.WriteHeader(http.StatusAccepted)
 	// 				w.Write([]byte("202 - Course updated: " +
 	// 					params["courseid"]))
@@ -238,6 +260,18 @@ func driver(res http.ResponseWriter, req *http.Request) {
 	// }
 }
 
+func isDriverJsonCompleted(driver Driver) bool {
+	driverID := strings.TrimSpace(driver.DriverID)
+	firstName := strings.TrimSpace(driver.FirstName)
+	lastName := strings.TrimSpace(driver.LastName)
+	mobileNumber := strings.TrimSpace(driver.MobileNumber)
+	emailAddress := strings.TrimSpace(driver.EmailAddress)
+	identificationNumber := strings.TrimSpace(driver.IdentificationNumber)
+	carLicenseNumber := strings.TrimSpace(driver.CarLicenseNumber)
+	fmt.Println(driverID, firstName, lastName, mobileNumber, emailAddress, identificationNumber, carLicenseNumber)
+	return driverID != "" && firstName != "" && lastName != "" && mobileNumber != "" && emailAddress != "" && identificationNumber != "" && carLicenseNumber != ""
+}
+
 func main() {
 
 	// Use mysql as driverName and a valid DSN as dataSourceName:
@@ -248,7 +282,7 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/api/v1/", home)
 	router.HandleFunc("/api/v1/drivers/", drivers)
-	router.HandleFunc("/api/v1/driver/{driverid}", driver)
+	router.HandleFunc("/api/v1/driver/{driverid}", driver).Methods("GET", "PUT", "POST")
 	router.HandleFunc("/api/v1/passengers/", passengers)
 	router.HandleFunc("/api/v1/trips/", trips)
 	// router.HandleFunc("/api/v1/courses", allcourses)
