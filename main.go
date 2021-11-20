@@ -595,6 +595,187 @@ func formmatedTripQueryField(body TripsRequestBody) string {
 	return results
 }
 
+func trip(res http.ResponseWriter, req *http.Request) {
+	params := mux.Vars(req)
+	tripid := params["tripid"]
+
+	if req.Method == "GET" {
+		query := fmt.Sprintf("SELECT * FROM Trips t INNER JOIN Drivers d ON t.DriverID = d.DriverID INNER JOIN Passengers p ON t.PassengerID = p.PassengerID WHERE TripID='%s'", tripid)
+		databaseResults, err := db.Query(query)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		var isExist bool
+		var trip Trip
+		for databaseResults.Next() {
+			err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.DriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.Driver.DriverID, &trip.Driver.FirstName, &trip.Driver.LastName, &trip.Driver.MobileNumber, &trip.Driver.EmailAddress, &trip.Driver.IdentificationNumber, &trip.Driver.CarLicenseNumber, &trip.Driver.AvailableStatus, &trip.Passenger.PassengerID, &trip.Passenger.FirstName, &trip.Passenger.LastName, &trip.Passenger.MobileNumber, &trip.Passenger.EmailAddress)
+			if err != nil {
+				panic(err.Error())
+			}
+			isExist = true
+		}
+
+		if isExist {
+			json.NewEncoder(res).Encode(trip)
+		} else {
+			res.WriteHeader(http.StatusNotFound)
+			res.Write([]byte("404 - No Trip found"))
+		}
+
+	}
+
+	if req.Header.Get("Content-type") == "application/json" {
+
+		// POST is for creating new driver
+		if req.Method == "POST" {
+
+			// read the string sent to the service
+			var newTrip Trip
+			reqBody, err := ioutil.ReadAll(req.Body)
+
+			if err == nil {
+				// convert JSON to object
+				json.Unmarshal(reqBody, &newTrip)
+
+				if !isTripJsonCompleted(newTrip) {
+					res.WriteHeader(http.StatusUnprocessableEntity)
+					res.Write([]byte("422 - Please supply trip information in JSON format"))
+					return
+				}
+
+				if tripid != newTrip.TripID {
+					res.WriteHeader(http.StatusUnprocessableEntity)
+					res.Write([]byte("422 - The data in body and parameters do not match"))
+					return
+				}
+
+				// check if driver exists; add only if driver does not exist
+				query := fmt.Sprintf("SELECT * FROM Trips WHERE TripID='%s'", tripid)
+				databaseResults, err := db.Query(query)
+				if err != nil {
+					panic(err.Error())
+				}
+
+				var isTripExist bool
+				for databaseResults.Next() {
+					if err != nil {
+						panic(err.Error())
+					}
+					isTripExist = true
+				}
+
+				if !isTripExist {
+					query := fmt.Sprintf("INSERT INTO Trips VALUES ('%s', '%s', '%s', '%s', '%s', '%d' )", newTrip.TripID, newTrip.PassengerID, newTrip.DriverID, newTrip.PickupPostalCode, newTrip.DropoffPostalCode, 1)
+
+					_, err := db.Query(query)
+
+					if err != nil {
+						panic(err.Error())
+					}
+
+					res.WriteHeader(http.StatusCreated)
+					res.Write([]byte("201 - Trip added: " + tripid))
+				} else {
+					res.WriteHeader(http.StatusConflict)
+					res.Write([]byte("409 - Duplicate trip ID"))
+				}
+			} else {
+				res.WriteHeader(http.StatusUnprocessableEntity)
+				res.Write([]byte("422 - Please supply trip information in JSON format"))
+			}
+		}
+	}
+
+	//---PUT is for creating or updating
+	// existing course---
+	if req.Method == "PUT" {
+		var newTrip Trip
+		reqBody, err := ioutil.ReadAll(req.Body)
+
+		if err == nil {
+			json.Unmarshal(reqBody, &newTrip)
+
+			if tripid != newTrip.TripID {
+				res.WriteHeader(http.StatusUnprocessableEntity)
+				res.Write([]byte("422 - The data in body and parameters do not match"))
+				return
+			}
+
+			// check if trip exists; add only if trip does not exist
+			query := fmt.Sprintf("SELECT * FROM Trips WHERE TripID='%s'", tripid)
+			databaseResults, err := db.Query(query)
+			if err != nil {
+				panic(err.Error())
+			}
+
+			var isTripExist bool
+			for databaseResults.Next() {
+				if err != nil {
+					panic(err.Error())
+				}
+				isTripExist = true
+			}
+
+			if !isTripExist {
+				query := fmt.Sprintf("INSERT INTO Trips VALUES ('%s', '%s', '%s', '%s', '%s', '%d' )", newTrip.TripID, newTrip.PassengerID, newTrip.DriverID, newTrip.PickupPostalCode, newTrip.DropoffPostalCode, 1)
+
+				_, err := db.Query(query)
+
+				if err != nil {
+					panic(err.Error())
+				}
+
+				res.WriteHeader(http.StatusCreated)
+				res.Write([]byte("201 - Trip added: " + tripid))
+			} else {
+				formattedUpdateFieldQuery := formattedUpdateTripQueryField(newTrip)
+
+				if formattedUpdateFieldQuery == "" { // means there is no valid field can be updated
+					res.WriteHeader(http.StatusUnprocessableEntity)
+					res.Write([]byte("422 - Please supply trip information in JSON format"))
+					return
+				}
+
+				query := fmt.Sprintf("UPDATE Trips SET %s WHERE TripID=%s", formattedUpdateFieldQuery, newTrip.TripID)
+
+				_, err := db.Query(query)
+
+				if err != nil {
+					panic(err.Error())
+				}
+
+				res.WriteHeader(http.StatusAccepted)
+				res.Write([]byte("201 - Trip updated: " + tripid))
+			}
+
+		} else {
+			res.WriteHeader(http.StatusUnprocessableEntity)
+			res.Write([]byte("422 - Please supply trip information in JSON format"))
+		}
+	}
+}
+
+func formattedUpdateTripQueryField(trip Trip) string {
+	var results string
+
+	if trip.TripProgress != 0 {
+		results += fmt.Sprintf("TripProgress='%d'", trip.TripProgress)
+	}
+
+	return results
+}
+
+func isTripJsonCompleted(trip Trip) bool {
+	tripID := strings.TrimSpace(trip.TripID)
+	passengerID := strings.TrimSpace(trip.PassengerID)
+	driverID := strings.TrimSpace(trip.DriverID)
+	pickupPostalCode := strings.TrimSpace(trip.PickupPostalCode)
+	dropoffPostalCode := strings.TrimSpace(trip.DropoffPostalCode)
+
+	return tripID != "" && passengerID != "" && driverID != "" && pickupPostalCode != "" && dropoffPostalCode != ""
+}
+
 func middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		// TODO: Authenticate requests by token
@@ -622,6 +803,7 @@ func main() {
 	router.HandleFunc("/api/v1/passengers/{passengerid}", passenger).Methods("GET", "PUT", "POST")
 
 	router.HandleFunc("/api/v1/trips/", trips).Methods("GET")
+	router.HandleFunc("/api/v1/trips/{tripid}", trip).Methods("GET", "PUT", "POST")
 
 	fmt.Println("Listening at port 5000")
 	log.Fatal(http.ListenAndServe(":5000", router))

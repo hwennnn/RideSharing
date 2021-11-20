@@ -28,8 +28,8 @@ CREATE TABLE Drivers
 CREATE TABLE Trips
 (
     TripID VARCHAR(30) NOT NULL,
-    PassengerID VARCHAR(30) NULL,
-    DriverID VARCHAR(30) NULL,
+    PassengerID VARCHAR(30) NOT NULL,
+    DriverID VARCHAR(30) NOT NULL,
     PickupPostalCode VARCHAR(10) NOT NULL,
     DropoffPostalCode VARCHAR(10) NOT NULL,
     TripProgress TINYINT(1) NOT NULL,
