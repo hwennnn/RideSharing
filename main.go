@@ -126,6 +126,7 @@ func passengers(res http.ResponseWriter, req *http.Request) {
 		results = append(results, passenger)
 		fmt.Println(passenger.PassengerID, passenger.FirstName, passenger.LastName, passenger.MobileNumber, passenger.EmailAddress)
 	}
+
 	// returns all the courses in JSON
 	json.NewEncoder(res).Encode(results)
 }
@@ -549,6 +550,14 @@ func trips(res http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(res).Encode(results)
 }
 
+func middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		// TODO: Authenticate requests by token
+		res.Header().Set("Content-Type", "application/json")
+		next.ServeHTTP(res, req)
+	})
+}
+
 func main() {
 
 	// Use mysql as driverName and a valid DSN as dataSourceName:
@@ -557,6 +566,7 @@ func main() {
 	fmt.Println("Database opened")
 
 	router := mux.NewRouter()
+	router.Use(middleware)
 	router.HandleFunc("/api/v1/", home)
 
 	router.HandleFunc("/api/v1/drivers/", drivers)

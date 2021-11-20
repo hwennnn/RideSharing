@@ -57,6 +57,7 @@ INSERT INTO Trips (TripID, PickupPostalCode, DropoffPostalCode, TripProgress) VA
 UPDATE Trips SET PassengerID='1', DriverID='3', TripProgress = 2 WHERE TripID = '3';
 
 
-SELECT * FROM Trips t 
+SELECT * FROM Trips t
 INNER JOIN Drivers d ON t.DriverID = d.DriverID 
 INNER JOIN Passengers p ON t.PassengerID = p.PassengerID
+WHERE t.DriverID = '2'
