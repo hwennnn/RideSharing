@@ -528,26 +528,71 @@ func isPassengerJsonCompleted(passenger Passenger) bool {
 	return passengerID != "" && firstName != "" && lastName != "" && mobileNumber != "" && emailAddress != ""
 }
 
+type TripsRequestBody struct {
+	PassengerID string `json:"passenger_id"`
+	DriverID    string `json:"driver_id"`
+}
+
 func trips(res http.ResponseWriter, req *http.Request) {
 	var results []Trip
 
-	databaseResults, err := db.Query("SELECT * FROM Trips t INNER JOIN Drivers d ON t.DriverID = d.DriverID INNER JOIN Passengers p ON t.PassengerID = p.PassengerID")
-	// [TripID PassengerID DriverID PickupPostalCode DropoffPostalCode TripProgress DriverID FirstName LastName MobileNumber EmailAddress IdentificationNumber CarLicenseNumber AvailableStatus PassengerID FirstName LastName MobileNumber EmailAddress]
-	if err != nil {
-		panic(err.Error())
-	}
+	var formmatedBody TripsRequestBody
+	reqBody, err := ioutil.ReadAll(req.Body)
 
-	for databaseResults.Next() {
-		var trip Trip
-		err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.DriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.Driver.DriverID, &trip.Driver.FirstName, &trip.Driver.LastName, &trip.Driver.MobileNumber, &trip.Driver.EmailAddress, &trip.Driver.IdentificationNumber, &trip.Driver.CarLicenseNumber, &trip.Driver.AvailableStatus, &trip.Passenger.PassengerID, &trip.Passenger.FirstName, &trip.Passenger.LastName, &trip.Passenger.MobileNumber, &trip.Passenger.EmailAddress)
+	if err == nil {
+		// convert JSON to object
+		json.Unmarshal(reqBody, &formmatedBody)
+
+		formmatedFieldQuery := formmatedTripQueryField(formmatedBody)
+		fmt.Println(formmatedFieldQuery)
+		if formmatedFieldQuery == "" {
+			res.WriteHeader(http.StatusUnprocessableEntity)
+			res.Write([]byte("422 - Please supply driver or passenger information in JSON format"))
+			return
+		}
+
+		query := fmt.Sprintf("SELECT * FROM Trips t INNER JOIN Drivers d ON t.DriverID = d.DriverID INNER JOIN Passengers p ON t.PassengerID = p.PassengerID WHERE %s", formmatedFieldQuery)
+		fmt.Println(query)
+		databaseResults, err := db.Query(query)
+
+		// [TripID PassengerID DriverID PickupPostalCode DropoffPostalCode TripProgress DriverID FirstName LastName MobileNumber EmailAddress IdentificationNumber CarLicenseNumber AvailableStatus PassengerID FirstName LastName MobileNumber EmailAddress]
 		if err != nil {
 			panic(err.Error())
 		}
-		results = append(results, trip)
 
+		for databaseResults.Next() {
+			var trip Trip
+			err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.DriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.Driver.DriverID, &trip.Driver.FirstName, &trip.Driver.LastName, &trip.Driver.MobileNumber, &trip.Driver.EmailAddress, &trip.Driver.IdentificationNumber, &trip.Driver.CarLicenseNumber, &trip.Driver.AvailableStatus, &trip.Passenger.PassengerID, &trip.Passenger.FirstName, &trip.Passenger.LastName, &trip.Passenger.MobileNumber, &trip.Passenger.EmailAddress)
+			if err != nil {
+				panic(err.Error())
+			}
+			results = append(results, trip)
+
+		}
+		// returns all the courses in JSON
+		json.NewEncoder(res).Encode(results)
+	} else {
+		res.WriteHeader(http.StatusUnprocessableEntity)
+		res.Write([]byte("422 - Please supply driver or passenger information in JSON format"))
 	}
-	// returns all the courses in JSON
-	json.NewEncoder(res).Encode(results)
+}
+
+func formmatedTripQueryField(body TripsRequestBody) string {
+	var results string
+
+	if body.DriverID != "" {
+		results += fmt.Sprintf("t.DriverID = %s", body.DriverID)
+	}
+
+	if body.PassengerID != "" {
+		if results != "" {
+			results += " AND "
+		}
+
+		results += fmt.Sprintf("t.PassengerID = %s", body.PassengerID)
+	}
+
+	return results
 }
 
 func middleware(next http.Handler) http.Handler {
@@ -567,16 +612,16 @@ func main() {
 
 	router := mux.NewRouter()
 	router.Use(middleware)
-	router.HandleFunc("/api/v1/", home)
+	router.HandleFunc("/api/v1/", home).Methods("GET")
 
-	router.HandleFunc("/api/v1/drivers/", drivers)
+	router.HandleFunc("/api/v1/drivers/", drivers).Methods("GET")
 	router.HandleFunc("/api/v1/drivers/{driverid}", driver).Methods("GET", "PUT", "POST")
-	router.HandleFunc("/api/v1/available_drivers/", availableDrivers)
+	router.HandleFunc("/api/v1/available_drivers/", availableDrivers).Methods("GET")
 
-	router.HandleFunc("/api/v1/passengers/", passengers)
+	router.HandleFunc("/api/v1/passengers/", passengers).Methods("GET")
 	router.HandleFunc("/api/v1/passengers/{passengerid}", passenger).Methods("GET", "PUT", "POST")
 
-	router.HandleFunc("/api/v1/trips/", trips)
+	router.HandleFunc("/api/v1/trips/", trips).Methods("GET")
 
 	fmt.Println("Listening at port 5000")
 	log.Fatal(http.ListenAndServe(":5000", router))
