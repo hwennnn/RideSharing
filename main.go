@@ -797,6 +797,16 @@ func isTripJsonCompleted(trip Trip) bool {
 func middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		// TODO: Authenticate requests by token
+		// token := req.Header.Get("X-Session-Token")
+
+		// if user, found := amw.tokenUsers[token]; found {
+		// 	// We found the token in our map
+		// 	log.Printf("Authenticated user %s\n", user)
+		// 	next.ServeHTTP(w, r)
+		// } else {
+		// 	http.Error(w, "Forbidden", http.StatusForbidden)
+		// }
+
 		res.Header().Set("Content-Type", "application/json")
 		next.ServeHTTP(res, req)
 	})
