@@ -23,9 +23,10 @@ type Driver struct {
 	IdentificationNumber string `json:"identification_number"`
 	CarLicenseNumber     string `json:"car_license_number"`
 	AvailableStatus      int    `json:"available_status"`
-	// 0 => Offline
-	// 1 => Online and available
-	// 2 => Online and during the trip
+	// 0 -> used by golang to indicate whether the integer variable has been initialised or not
+	// 1 => Offline
+	// 2 => Online and available
+	// 3 => Online and during the trip
 }
 
 type Passenger struct {
@@ -45,10 +46,10 @@ type Trip struct {
 	TripProgress      int       `json:"trip_progress"`
 	Passenger         Passenger `json:"passenger"`
 	Driver            Driver    `json:"driver"`
-
-	// 0 -> Created by passenger, but no driver is assigned yet
-	// 1 -> The trip is ongoing
-	// 2 -> The trip has ended
+	// 0 -> used by golang to indicate whether the integer variable has been initialised or not
+	// 1 -> Created by passenger, but no driver is assigned yet
+	// 2 -> The trip is ongoing
+	// 3 -> The trip has ended
 }
 
 var db *sql.DB
@@ -222,7 +223,7 @@ func driver(res http.ResponseWriter, req *http.Request) {
 				}
 
 				if !isDriverExist {
-					query := fmt.Sprintf("INSERT INTO Drivers VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', %d)", newDriver.DriverID, newDriver.FirstName, newDriver.LastName, newDriver.MobileNumber, newDriver.EmailAddress, newDriver.IdentificationNumber, newDriver.CarLicenseNumber, 0)
+					query := fmt.Sprintf("INSERT INTO Drivers VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', %d)", newDriver.DriverID, newDriver.FirstName, newDriver.LastName, newDriver.MobileNumber, newDriver.EmailAddress, newDriver.IdentificationNumber, newDriver.CarLicenseNumber, 1)
 
 					_, err := db.Query(query)
 
@@ -252,12 +253,6 @@ func driver(res http.ResponseWriter, req *http.Request) {
 		if err == nil {
 			json.Unmarshal(reqBody, &newDriver)
 
-			if !isDriverJsonCompleted(newDriver) {
-				res.WriteHeader(http.StatusUnprocessableEntity)
-				res.Write([]byte("422 - Please supply driver information in JSON format"))
-				return
-			}
-
 			if driverid != newDriver.DriverID {
 				res.WriteHeader(http.StatusUnprocessableEntity)
 				res.Write([]byte("422 - The data in body and parameters do not match"))
@@ -280,7 +275,7 @@ func driver(res http.ResponseWriter, req *http.Request) {
 			}
 
 			if !isDriverExist {
-				query := fmt.Sprintf("INSERT INTO Drivers VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', %d)", newDriver.DriverID, newDriver.FirstName, newDriver.LastName, newDriver.MobileNumber, newDriver.EmailAddress, newDriver.IdentificationNumber, newDriver.CarLicenseNumber, 0)
+				query := fmt.Sprintf("INSERT INTO Drivers VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', %d)", newDriver.DriverID, newDriver.FirstName, newDriver.LastName, newDriver.MobileNumber, newDriver.EmailAddress, newDriver.IdentificationNumber, newDriver.CarLicenseNumber, 1)
 
 				_, err := db.Query(query)
 
@@ -291,8 +286,16 @@ func driver(res http.ResponseWriter, req *http.Request) {
 				res.WriteHeader(http.StatusCreated)
 				res.Write([]byte("201 - Driver added: " + driverid))
 			} else {
-				query := fmt.Sprintf("UPDATE Drivers SET FirstName='%s', LastName='%s', MobileNumber='%s', EmailAddress='%s', CarLicenseNumber='%s', AvailableStatus=%d WHERE DriverID=%s", newDriver.FirstName, newDriver.LastName, newDriver.MobileNumber, newDriver.EmailAddress, newDriver.CarLicenseNumber, newDriver.AvailableStatus, newDriver.DriverID)
+				formattedUpdateFieldQuery := formmatedUpdateDriverQueryField(newDriver)
 
+				if formattedUpdateFieldQuery == "" { // means there is no valid field can be updated
+					res.WriteHeader(http.StatusUnprocessableEntity)
+					res.Write([]byte("422 - Please supply driver information in JSON format"))
+					return
+				}
+
+				query := fmt.Sprintf("UPDATE Drivers SET %s WHERE DriverID=%s", formattedUpdateFieldQuery, newDriver.DriverID)
+				fmt.Println(query)
 				_, err := db.Query(query)
 
 				if err != nil {
@@ -308,6 +311,36 @@ func driver(res http.ResponseWriter, req *http.Request) {
 			res.Write([]byte("422 - Please supply driver information in JSON format"))
 		}
 	}
+}
+
+func formmatedUpdateDriverQueryField(newDriver Driver) string {
+	var fields []string
+
+	if newDriver.FirstName != "" {
+		fields = append(fields, fmt.Sprintf("FirstName='%s'", newDriver.FirstName))
+	}
+
+	if newDriver.LastName != "" {
+		fields = append(fields, fmt.Sprintf("LastName='%s'", newDriver.LastName))
+	}
+
+	if newDriver.MobileNumber != "" {
+		fields = append(fields, fmt.Sprintf("MobileNumber='%s'", newDriver.MobileNumber))
+	}
+
+	if newDriver.EmailAddress != "" {
+		fields = append(fields, fmt.Sprintf("EmailAddress='%s'", newDriver.EmailAddress))
+	}
+
+	if newDriver.CarLicenseNumber != "" {
+		fields = append(fields, fmt.Sprintf("CarLicenseNumber='%s'", newDriver.CarLicenseNumber))
+	}
+
+	if newDriver.AvailableStatus != 0 {
+		fields = append(fields, fmt.Sprintf("AvailableStatus='%d'", newDriver.AvailableStatus))
+	}
+
+	return strings.Join(fields, ", ")
 }
 
 func isDriverJsonCompleted(driver Driver) bool {
