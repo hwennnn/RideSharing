@@ -295,7 +295,7 @@ func driver(res http.ResponseWriter, req *http.Request) {
 				}
 
 				query := fmt.Sprintf("UPDATE Drivers SET %s WHERE DriverID=%s", formattedUpdateFieldQuery, newDriver.DriverID)
-				fmt.Println(query)
+
 				_, err := db.Query(query)
 
 				if err != nil {
@@ -456,12 +456,6 @@ func passenger(res http.ResponseWriter, req *http.Request) {
 		if err == nil {
 			json.Unmarshal(reqBody, &newPassenger)
 
-			if !isPassengerJsonCompleted(newPassenger) {
-				res.WriteHeader(http.StatusUnprocessableEntity)
-				res.Write([]byte("422 - Please supply passenger information in JSON format"))
-				return
-			}
-
 			if passengerid != newPassenger.PassengerID {
 				res.WriteHeader(http.StatusUnprocessableEntity)
 				res.Write([]byte("422 - The data in body and parameters do not match"))
@@ -495,7 +489,15 @@ func passenger(res http.ResponseWriter, req *http.Request) {
 				res.WriteHeader(http.StatusCreated)
 				res.Write([]byte("201 - Passenger added: " + passengerid))
 			} else {
-				query := fmt.Sprintf("UPDATE Passengers SET FirstName='%s', LastName='%s', MobileNumber='%s', EmailAddress='%s'WHERE PassengerID=%s", newPassenger.FirstName, newPassenger.LastName, newPassenger.MobileNumber, newPassenger.EmailAddress, newPassenger.PassengerID)
+				formattedUpdateFieldQuery := formmatedUpdatePassengerQueryField(newPassenger)
+
+				if formattedUpdateFieldQuery == "" { // means there is no valid field can be updated
+					res.WriteHeader(http.StatusUnprocessableEntity)
+					res.Write([]byte("422 - Please supply passenger information in JSON format"))
+					return
+				}
+
+				query := fmt.Sprintf("UPDATE Passengers SET %s WHERE PassengerID=%s", formattedUpdateFieldQuery, newPassenger.PassengerID)
 
 				_, err := db.Query(query)
 
@@ -512,6 +514,28 @@ func passenger(res http.ResponseWriter, req *http.Request) {
 			res.Write([]byte("422 - Please supply passenger information in JSON format"))
 		}
 	}
+}
+
+func formmatedUpdatePassengerQueryField(newPassenger Passenger) string {
+	var fields []string
+
+	if newPassenger.FirstName != "" {
+		fields = append(fields, fmt.Sprintf("FirstName='%s'", newPassenger.FirstName))
+	}
+
+	if newPassenger.LastName != "" {
+		fields = append(fields, fmt.Sprintf("LastName='%s'", newPassenger.LastName))
+	}
+
+	if newPassenger.MobileNumber != "" {
+		fields = append(fields, fmt.Sprintf("MobileNumber='%s'", newPassenger.MobileNumber))
+	}
+
+	if newPassenger.EmailAddress != "" {
+		fields = append(fields, fmt.Sprintf("EmailAddress='%s'", newPassenger.EmailAddress))
+	}
+
+	return strings.Join(fields, ", ")
 }
 
 func isPassengerJsonCompleted(passenger Passenger) bool {
