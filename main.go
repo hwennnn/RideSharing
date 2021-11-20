@@ -130,28 +130,6 @@ func passengers(res http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(res).Encode(results)
 }
 
-func trips(res http.ResponseWriter, req *http.Request) {
-	var results []Trip
-
-	databaseResults, err := db.Query("SELECT * FROM Trips t INNER JOIN Drivers d ON t.DriverID = d.DriverID INNER JOIN Passengers p ON t.PassengerID = p.PassengerID")
-	// [TripID PassengerID DriverID PickupPostalCode DropoffPostalCode TripProgress DriverID FirstName LastName MobileNumber EmailAddress IdentificationNumber CarLicenseNumber AvailableStatus PassengerID FirstName LastName MobileNumber EmailAddress]
-	if err != nil {
-		panic(err.Error())
-	}
-
-	for databaseResults.Next() {
-		var trip Trip
-		err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.DriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.Driver.DriverID, &trip.Driver.FirstName, &trip.Driver.LastName, &trip.Driver.MobileNumber, &trip.Driver.EmailAddress, &trip.Driver.IdentificationNumber, &trip.Driver.CarLicenseNumber, &trip.Driver.AvailableStatus, &trip.Passenger.PassengerID, &trip.Passenger.FirstName, &trip.Passenger.LastName, &trip.Passenger.MobileNumber, &trip.Passenger.EmailAddress)
-		if err != nil {
-			panic(err.Error())
-		}
-		results = append(results, trip)
-
-	}
-	// returns all the courses in JSON
-	json.NewEncoder(res).Encode(results)
-}
-
 func driver(res http.ResponseWriter, req *http.Request) {
 	params := mux.Vars(req)
 	driverid := params["driverid"]
@@ -549,6 +527,28 @@ func isPassengerJsonCompleted(passenger Passenger) bool {
 	return passengerID != "" && firstName != "" && lastName != "" && mobileNumber != "" && emailAddress != ""
 }
 
+func trips(res http.ResponseWriter, req *http.Request) {
+	var results []Trip
+
+	databaseResults, err := db.Query("SELECT * FROM Trips t INNER JOIN Drivers d ON t.DriverID = d.DriverID INNER JOIN Passengers p ON t.PassengerID = p.PassengerID")
+	// [TripID PassengerID DriverID PickupPostalCode DropoffPostalCode TripProgress DriverID FirstName LastName MobileNumber EmailAddress IdentificationNumber CarLicenseNumber AvailableStatus PassengerID FirstName LastName MobileNumber EmailAddress]
+	if err != nil {
+		panic(err.Error())
+	}
+
+	for databaseResults.Next() {
+		var trip Trip
+		err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.DriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.Driver.DriverID, &trip.Driver.FirstName, &trip.Driver.LastName, &trip.Driver.MobileNumber, &trip.Driver.EmailAddress, &trip.Driver.IdentificationNumber, &trip.Driver.CarLicenseNumber, &trip.Driver.AvailableStatus, &trip.Passenger.PassengerID, &trip.Passenger.FirstName, &trip.Passenger.LastName, &trip.Passenger.MobileNumber, &trip.Passenger.EmailAddress)
+		if err != nil {
+			panic(err.Error())
+		}
+		results = append(results, trip)
+
+	}
+	// returns all the courses in JSON
+	json.NewEncoder(res).Encode(results)
+}
+
 func main() {
 
 	// Use mysql as driverName and a valid DSN as dataSourceName:
@@ -558,15 +558,15 @@ func main() {
 
 	router := mux.NewRouter()
 	router.HandleFunc("/api/v1/", home)
+
 	router.HandleFunc("/api/v1/drivers/", drivers)
-	router.HandleFunc("/api/v1/driver/{driverid}", driver).Methods("GET", "PUT", "POST")
+	router.HandleFunc("/api/v1/drivers/{driverid}", driver).Methods("GET", "PUT", "POST")
 	router.HandleFunc("/api/v1/available_drivers/", availableDrivers)
 
 	router.HandleFunc("/api/v1/passengers/", passengers)
-	router.HandleFunc("/api/v1/passenger/{passengerid}", passenger).Methods("GET", "PUT", "POST")
+	router.HandleFunc("/api/v1/passengers/{passengerid}", passenger).Methods("GET", "PUT", "POST")
+
 	router.HandleFunc("/api/v1/trips/", trips)
-	// router.HandleFunc("/api/v1/courses", allcourses)
-	// router.HandleFunc("/api/v1/courses/{courseid}", course).Methods("GET", "PUT", "POST", "DELETE")
 
 	fmt.Println("Listening at port 5000")
 	log.Fatal(http.ListenAndServe(":5000", router))
