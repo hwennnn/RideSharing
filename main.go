@@ -254,6 +254,12 @@ func driver(res http.ResponseWriter, req *http.Request) {
 			}
 
 			if !isDriverExist {
+				if !isDriverJsonCompleted(newDriver) {
+					res.WriteHeader(http.StatusUnprocessableEntity)
+					res.Write([]byte("422 - Please supply driver information in JSON format"))
+					return
+				}
+
 				query := fmt.Sprintf("INSERT INTO Drivers VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', %d)", newDriver.DriverID, newDriver.FirstName, newDriver.LastName, newDriver.MobileNumber, newDriver.EmailAddress, newDriver.IdentificationNumber, newDriver.CarLicenseNumber, 1)
 
 				_, err := db.Query(query)
@@ -457,6 +463,12 @@ func passenger(res http.ResponseWriter, req *http.Request) {
 			}
 
 			if !isPassengerExist {
+				if !isPassengerJsonCompleted(newPassenger) {
+					res.WriteHeader(http.StatusUnprocessableEntity)
+					res.Write([]byte("422 - Please supply passenger information in JSON format"))
+					return
+				}
+
 				query := fmt.Sprintf("INSERT INTO Passengers VALUES ('%s', '%s', '%s', '%s', '%s')", newPassenger.PassengerID, newPassenger.FirstName, newPassenger.LastName, newPassenger.MobileNumber, newPassenger.EmailAddress)
 
 				_, err := db.Query(query)
@@ -544,7 +556,7 @@ func trips(res http.ResponseWriter, req *http.Request) {
 		json.Unmarshal(reqBody, &formmatedBody)
 
 		formmatedFieldQuery := formmatedTripQueryField(formmatedBody)
-		fmt.Println(formmatedFieldQuery)
+
 		if formmatedFieldQuery == "" {
 			res.WriteHeader(http.StatusUnprocessableEntity)
 			res.Write([]byte("422 - Please supply driver or passenger information in JSON format"))
@@ -718,6 +730,12 @@ func trip(res http.ResponseWriter, req *http.Request) {
 			}
 
 			if !isTripExist {
+				if !isTripJsonCompleted(newTrip) {
+					res.WriteHeader(http.StatusUnprocessableEntity)
+					res.Write([]byte("422 - Please supply trip information in JSON format"))
+					return
+				}
+
 				query := fmt.Sprintf("INSERT INTO Trips VALUES ('%s', '%s', '%s', '%s', '%s', '%d' )", newTrip.TripID, newTrip.PassengerID, newTrip.DriverID, newTrip.PickupPostalCode, newTrip.DropoffPostalCode, 1)
 
 				_, err := db.Query(query)
