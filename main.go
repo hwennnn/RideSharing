@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
@@ -44,6 +45,8 @@ type Trip struct {
 	PickupPostalCode  string    `json:"pickup_postal_code"`
 	DropoffPostalCode string    `json:"dropoff_postal_code"`
 	TripProgress      int       `json:"trip_progress"`
+	CreatedTime       int64     `json:"created_time"`
+	CompletedTime     int64     `json:"completed_time"`
 	Passenger         Passenger `json:"passenger"`
 	Driver            Driver    `json:"driver"`
 	// 0 -> used by golang to indicate whether the integer variable has been initialised or not
@@ -53,6 +56,10 @@ type Trip struct {
 }
 
 var db *sql.DB
+
+func currentMs() int64 {
+	return time.Now().Round(time.Millisecond).UnixNano() / 1e6
+}
 
 func home(res http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(res, "Welcome to the REST API!")
@@ -621,7 +628,7 @@ func trip(res http.ResponseWriter, req *http.Request) {
 		var isExist bool
 		var trip Trip
 		for databaseResults.Next() {
-			err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.DriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.Driver.DriverID, &trip.Driver.FirstName, &trip.Driver.LastName, &trip.Driver.MobileNumber, &trip.Driver.EmailAddress, &trip.Driver.IdentificationNumber, &trip.Driver.CarLicenseNumber, &trip.Driver.AvailableStatus, &trip.Passenger.PassengerID, &trip.Passenger.FirstName, &trip.Passenger.LastName, &trip.Passenger.MobileNumber, &trip.Passenger.EmailAddress)
+			err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.DriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.CreatedTime, &trip.CompletedTime, &trip.Driver.DriverID, &trip.Driver.FirstName, &trip.Driver.LastName, &trip.Driver.MobileNumber, &trip.Driver.EmailAddress, &trip.Driver.IdentificationNumber, &trip.Driver.CarLicenseNumber, &trip.Driver.AvailableStatus, &trip.Passenger.PassengerID, &trip.Passenger.FirstName, &trip.Passenger.LastName, &trip.Passenger.MobileNumber, &trip.Passenger.EmailAddress)
 			if err != nil {
 				panic(err.Error())
 			}
@@ -678,7 +685,7 @@ func trip(res http.ResponseWriter, req *http.Request) {
 				}
 
 				if !isTripExist {
-					query := fmt.Sprintf("INSERT INTO Trips VALUES ('%s', '%s', '%s', '%s', '%s', '%d' )", newTrip.TripID, newTrip.PassengerID, newTrip.DriverID, newTrip.PickupPostalCode, newTrip.DropoffPostalCode, 1)
+					query := fmt.Sprintf("INSERT INTO Trips VALUES ('%s', '%s', '%s', '%s', '%s', '%d', '%d', NULL)", newTrip.TripID, newTrip.PassengerID, newTrip.DriverID, newTrip.PickupPostalCode, newTrip.DropoffPostalCode, 1, currentMs())
 
 					_, err := db.Query(query)
 
@@ -721,11 +728,13 @@ func trip(res http.ResponseWriter, req *http.Request) {
 				panic(err.Error())
 			}
 
+			var tripFromDatabase Trip
 			var isTripExist bool
 			for databaseResults.Next() {
 				if err != nil {
 					panic(err.Error())
 				}
+				err = databaseResults.Scan(&tripFromDatabase.TripID, &tripFromDatabase.PassengerID, &tripFromDatabase.DriverID, &tripFromDatabase.PickupPostalCode, &tripFromDatabase.DropoffPostalCode, &tripFromDatabase.TripProgress, &tripFromDatabase.CreatedTime, &tripFromDatabase.CompletedTime, &tripFromDatabase.Driver.DriverID, &tripFromDatabase.Driver.FirstName, &tripFromDatabase.Driver.LastName, &tripFromDatabase.Driver.MobileNumber, &tripFromDatabase.Driver.EmailAddress, &tripFromDatabase.Driver.IdentificationNumber, &tripFromDatabase.Driver.CarLicenseNumber, &tripFromDatabase.Driver.AvailableStatus, &tripFromDatabase.Passenger.PassengerID, &tripFromDatabase.Passenger.FirstName, &tripFromDatabase.Passenger.LastName, &tripFromDatabase.Passenger.MobileNumber, &tripFromDatabase.Passenger.EmailAddress)
 				isTripExist = true
 			}
 
@@ -736,7 +745,7 @@ func trip(res http.ResponseWriter, req *http.Request) {
 					return
 				}
 
-				query := fmt.Sprintf("INSERT INTO Trips VALUES ('%s', '%s', '%s', '%s', '%s', '%d' )", newTrip.TripID, newTrip.PassengerID, newTrip.DriverID, newTrip.PickupPostalCode, newTrip.DropoffPostalCode, 1)
+				query := fmt.Sprintf("INSERT INTO Trips VALUES ('%s', '%s', '%s', '%s', '%s', '%d', '%d', NULL)", newTrip.TripID, newTrip.PassengerID, newTrip.DriverID, newTrip.PickupPostalCode, newTrip.DropoffPostalCode, 1, currentMs())
 
 				_, err := db.Query(query)
 
@@ -755,6 +764,10 @@ func trip(res http.ResponseWriter, req *http.Request) {
 					return
 				}
 
+				if tripFromDatabase.TripProgress != 3 && newTrip.TripProgress == 3 {
+					updateTripCompletedTime(tripid)
+				}
+
 				query := fmt.Sprintf("UPDATE Trips SET %s WHERE TripID=%s", formattedUpdateFieldQuery, newTrip.TripID)
 
 				_, err := db.Query(query)
@@ -771,6 +784,16 @@ func trip(res http.ResponseWriter, req *http.Request) {
 			res.WriteHeader(http.StatusUnprocessableEntity)
 			res.Write([]byte("422 - Please supply trip information in JSON format"))
 		}
+	}
+}
+
+func updateTripCompletedTime(tripid string) {
+	query := fmt.Sprintf("UPDATE Trips SET CompletedTime=%d WHERE TripID=%s", currentMs(), tripid)
+
+	_, err := db.Query(query)
+
+	if err != nil {
+		panic(err.Error())
 	}
 }
 

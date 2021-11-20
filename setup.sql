@@ -33,6 +33,8 @@ CREATE TABLE Trips
     PickupPostalCode VARCHAR(10) NOT NULL,
     DropoffPostalCode VARCHAR(10) NOT NULL,
     TripProgress TINYINT(1) NOT NULL,
+    CreatedTime BIGINT NOT NULL,
+    CompletedTime BIGINT NULL,
     CONSTRAINT PK_Trip PRIMARY KEY (TripID),
     CONSTRAINT FK_Trip_Passenger FOREIGN KEY (PassengerID) REFERENCES Passengers(PassengerID),
     CONSTRAINT FK_Trip_Driver FOREIGN KEY (DriverID) REFERENCES Drivers(DriverID)
@@ -49,12 +51,12 @@ INSERT INTO Drivers (DriverID, FirstName, LastName, MobileNumber, EmailAddress, 
 INSERT INTO Drivers (DriverID, FirstName, LastName, MobileNumber, EmailAddress, IdentificationNumber, CarLicenseNumber, AvailableStatus) VALUES ('3', 'Ming Han', 'Vincent Tee', '6544444444', 'vincentminghan@gmail.com', 'T22222222B', 'agfahudsi142kj42', 2);
 
 -- Insert Trip Data
-INSERT INTO Trips (TripID, PickupPostalCode, DropoffPostalCode, TripProgress) VALUES ('1', '642678', '730022', 0);
-UPDATE Trips SET PassengerID='1', DriverID='2', TripProgress = 2 WHERE TripID = '1';
-INSERT INTO Trips (TripID, PickupPostalCode, DropoffPostalCode, TripProgress) VALUES ('2', '111111', '222222', 1);
-UPDATE Trips SET PassengerID='2', DriverID='3', TripProgress = 2 WHERE TripID = '2';
-INSERT INTO Trips (TripID, PickupPostalCode, DropoffPostalCode, TripProgress) VALUES ('3', '333333', '444444', 2);
-UPDATE Trips SET PassengerID='1', DriverID='3', TripProgress = 2 WHERE TripID = '3';
+INSERT INTO Trips (TripID, PassengerID, DriverID, PickupPostalCode, DropoffPostalCode, TripProgress, CreatedTime) VALUES ('1', '1', '2', '642678', '730022', 1, 1637424569024);
+UPDATE Trips SET TripProgress = 2 WHERE TripID = '1';
+INSERT INTO Trips (TripID, PassengerID, DriverID, PickupPostalCode, DropoffPostalCode, TripProgress, CreatedTime) VALUES ('2', '2', '3', '111111', '222222', 1, 1637524569024);
+UPDATE Trips SET TripProgress = 3 WHERE TripID = '2';
+INSERT INTO Trips (TripID, PassengerID, DriverID, PickupPostalCode, DropoffPostalCode, TripProgress, CreatedTime) VALUES ('3', '1', '3', '333333', '444444', 2, 1637424565554);
+UPDATE Trips SET TripProgress = 2 WHERE TripID = '3';
 
 
 SELECT * FROM Trips t
