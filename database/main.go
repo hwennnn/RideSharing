@@ -555,63 +555,54 @@ type TripsRequestBody struct {
 func trips(res http.ResponseWriter, req *http.Request) {
 	var results []Trip
 
-	var formmatedBody TripsRequestBody
-	reqBody, err := ioutil.ReadAll(req.Body)
+	params := req.URL.Query()
 
-	if err == nil {
-		// convert JSON to object
-		json.Unmarshal(reqBody, &formmatedBody)
+	// convert JSON to object
+	formmatedFieldQuery := formmatedTripQueryField(params["driver_id"], params["passenger_id"])
 
-		formmatedFieldQuery := formmatedTripQueryField(formmatedBody)
+	query := fmt.Sprintf("SELECT * FROM Trips t INNER JOIN Drivers d ON t.DriverID = d.DriverID INNER JOIN Passengers p ON t.PassengerID = p.PassengerID WHERE %s", formmatedFieldQuery)
+	fmt.Println(query)
+	databaseResults, err := db.Query(query)
 
-		if formmatedFieldQuery == "" {
-			res.WriteHeader(http.StatusUnprocessableEntity)
-			res.Write([]byte("422 - Please supply driver or passenger information in JSON format"))
-			return
-		}
+	// [TripID PassengerID DriverID PickupPostalCode DropoffPostalCode TripProgress DriverID FirstName LastName MobileNumber EmailAddress IdentificationNumber CarLicenseNumber AvailableStatus PassengerID FirstName LastName MobileNumber EmailAddress]
+	if err != nil {
+		panic(err.Error())
+	}
 
-		query := fmt.Sprintf("SELECT * FROM Trips t INNER JOIN Drivers d ON t.DriverID = d.DriverID INNER JOIN Passengers p ON t.PassengerID = p.PassengerID WHERE %s", formmatedFieldQuery)
-		fmt.Println(query)
-		databaseResults, err := db.Query(query)
-
-		// [TripID PassengerID DriverID PickupPostalCode DropoffPostalCode TripProgress DriverID FirstName LastName MobileNumber EmailAddress IdentificationNumber CarLicenseNumber AvailableStatus PassengerID FirstName LastName MobileNumber EmailAddress]
+	for databaseResults.Next() {
+		var trip Trip
+		err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.DriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.CreatedTime, &trip.CompletedTime, &trip.Driver.DriverID, &trip.Driver.FirstName, &trip.Driver.LastName, &trip.Driver.MobileNumber, &trip.Driver.EmailAddress, &trip.Driver.IdentificationNumber, &trip.Driver.CarLicenseNumber, &trip.Driver.AvailableStatus, &trip.Passenger.PassengerID, &trip.Passenger.FirstName, &trip.Passenger.LastName, &trip.Passenger.MobileNumber, &trip.Passenger.EmailAddress)
 		if err != nil {
 			panic(err.Error())
 		}
+		results = append(results, trip)
 
-		for databaseResults.Next() {
-			var trip Trip
-			err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.DriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.Driver.DriverID, &trip.Driver.FirstName, &trip.Driver.LastName, &trip.Driver.MobileNumber, &trip.Driver.EmailAddress, &trip.Driver.IdentificationNumber, &trip.Driver.CarLicenseNumber, &trip.Driver.AvailableStatus, &trip.Passenger.PassengerID, &trip.Passenger.FirstName, &trip.Passenger.LastName, &trip.Passenger.MobileNumber, &trip.Passenger.EmailAddress)
-			if err != nil {
-				panic(err.Error())
-			}
-			results = append(results, trip)
-
-		}
-		// returns all the courses in JSON
-		json.NewEncoder(res).Encode(results)
-	} else {
-		res.WriteHeader(http.StatusUnprocessableEntity)
-		res.Write([]byte("422 - Please supply driver or passenger information in JSON format"))
 	}
+	// returns all the courses in JSON
+	json.NewEncoder(res).Encode(results)
 }
 
-func formmatedTripQueryField(body TripsRequestBody) string {
+func formmatedTripQueryField(driverID []string, passengerID []string) string {
 	var results string
+	fmt.Println(driverID, passengerID)
 
-	if body.DriverID != "" {
-		results += fmt.Sprintf("t.DriverID = %s", body.DriverID)
+	if len(driverID) > 0 && driverID[0] != "" {
+		results += fmt.Sprintf("t.DriverID = %s", driverID[0])
 	}
 
-	if body.PassengerID != "" {
+	if len(passengerID) > 0 && passengerID[0] != "" {
 		if results != "" {
 			results += " AND "
 		}
 
-		results += fmt.Sprintf("t.PassengerID = %s", body.PassengerID)
+		results += fmt.Sprintf("t.PassengerID = %s", passengerID[0])
 	}
 
-	return results + " AND TripProgress=3" // filter only completed trip
+	if results == "" {
+		return "t.TripProgress=3"
+	}
+
+	return results + " AND t.TripProgress=3" // filter only completed trip
 }
 
 func trip(res http.ResponseWriter, req *http.Request) {
@@ -862,7 +853,7 @@ func main() {
 	router.HandleFunc("/api/v1/passengers/", passengers).Methods("GET")
 	router.HandleFunc("/api/v1/passengers/{passengerid}", passenger).Methods("GET", "PUT", "POST")
 
-	router.HandleFunc("/api/v1/trips/", trips).Methods("GET")
+	router.HandleFunc("/api/v1/trips", trips).Methods("GET")
 	router.HandleFunc("/api/v1/trips/{tripid}", trip).Methods("GET", "PUT", "POST")
 
 	handler := cors.AllowAll().Handler(router)
