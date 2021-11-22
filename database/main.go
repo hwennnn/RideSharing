@@ -13,6 +13,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
 type Driver struct {
@@ -817,6 +818,12 @@ func isTripJsonCompleted(trip Trip) bool {
 	return tripID != "" && passengerID != "" && driverID != "" && pickupPostalCode != "" && dropoffPostalCode != ""
 }
 
+// func setupCorsResponse(res *http.ResponseWriter, req *http.Request) {
+// 	res.Header().Set("Access-Control-Allow-Origin", "*")
+// 	res.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+// 	res.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Authorization")
+// }
+
 func middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		// TODO: Authenticate requests by token
@@ -829,7 +836,6 @@ func middleware(next http.Handler) http.Handler {
 		// } else {
 		// 	http.Error(w, "Forbidden", http.StatusForbidden)
 		// }
-
 		res.Header().Set("Content-Type", "application/json")
 		next.ServeHTTP(res, req)
 	})
@@ -856,6 +862,8 @@ func main() {
 	router.HandleFunc("/api/v1/trips/", trips).Methods("GET")
 	router.HandleFunc("/api/v1/trips/{tripid}", trip).Methods("GET", "PUT", "POST")
 
+	handler := cors.Default().Handler(router)
+
 	fmt.Println("Listening at port 5000")
-	log.Fatal(http.ListenAndServe(":5000", router))
+	log.Fatal(http.ListenAndServe(":5000", handler))
 }
