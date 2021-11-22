@@ -587,7 +587,7 @@ func formmatedTripQueryField(driverID []string, passengerID []string) string {
 	fmt.Println(driverID, passengerID)
 
 	if len(driverID) > 0 && driverID[0] != "" {
-		results += fmt.Sprintf("t.DriverID = %s", driverID[0])
+		results += fmt.Sprintf("t.DriverID = '%s'", driverID[0])
 	}
 
 	if len(passengerID) > 0 && passengerID[0] != "" {
@@ -595,7 +595,7 @@ func formmatedTripQueryField(driverID []string, passengerID []string) string {
 			results += " AND "
 		}
 
-		results += fmt.Sprintf("t.PassengerID = %s", passengerID[0])
+		results += fmt.Sprintf("t.PassengerID = '%s'", passengerID[0])
 	}
 
 	if results == "" {
