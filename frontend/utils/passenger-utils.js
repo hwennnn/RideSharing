@@ -18,3 +18,9 @@ export async function getPassenger(passengerID) {
 
     return response.data
 }
+
+export async function retrieveTripsForPassenger(passengerID) {
+    const response = await axios.get(`${baseUrl}/trips?passenger_id=${passengerID}`)
+
+    return response.data
+}
