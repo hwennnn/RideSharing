@@ -286,7 +286,7 @@ func driver(res http.ResponseWriter, req *http.Request) {
 					return
 				}
 
-				query := fmt.Sprintf("UPDATE Drivers SET %s WHERE DriverID=%s", formattedUpdateFieldQuery, newDriver.DriverID)
+				query := fmt.Sprintf("UPDATE Drivers SET %s WHERE DriverID='%s'", formattedUpdateFieldQuery, newDriver.DriverID)
 
 				_, err := db.Query(query)
 
@@ -295,7 +295,7 @@ func driver(res http.ResponseWriter, req *http.Request) {
 				}
 
 				res.WriteHeader(http.StatusAccepted)
-				res.Write([]byte("201 - Driver updated: " + driverid))
+				res.Write([]byte("202 - Driver updated: " + driverid))
 			}
 
 		} else {
@@ -495,7 +495,7 @@ func passenger(res http.ResponseWriter, req *http.Request) {
 					return
 				}
 
-				query := fmt.Sprintf("UPDATE Passengers SET %s WHERE PassengerID=%s", formattedUpdateFieldQuery, newPassenger.PassengerID)
+				query := fmt.Sprintf("UPDATE Passengers SET %s WHERE PassengerID='%s'", formattedUpdateFieldQuery, newPassenger.PassengerID)
 
 				_, err := db.Query(query)
 
@@ -504,7 +504,7 @@ func passenger(res http.ResponseWriter, req *http.Request) {
 				}
 
 				res.WriteHeader(http.StatusAccepted)
-				res.Write([]byte("201 - Passenger updated: " + passengerid))
+				res.Write([]byte("202 - Passenger updated: " + passengerid))
 			}
 
 		} else {
@@ -768,7 +768,7 @@ func trip(res http.ResponseWriter, req *http.Request) {
 					updateTripCompletedTime(tripid)
 				}
 
-				query := fmt.Sprintf("UPDATE Trips SET %s WHERE TripID=%s", formattedUpdateFieldQuery, newTrip.TripID)
+				query := fmt.Sprintf("UPDATE Trips SET %s WHERE TripID='%s'", formattedUpdateFieldQuery, newTrip.TripID)
 
 				_, err := db.Query(query)
 
@@ -777,7 +777,7 @@ func trip(res http.ResponseWriter, req *http.Request) {
 				}
 
 				res.WriteHeader(http.StatusAccepted)
-				res.Write([]byte("201 - Trip updated: " + tripid))
+				res.Write([]byte("202 - Trip updated: " + tripid))
 			}
 
 		} else {
