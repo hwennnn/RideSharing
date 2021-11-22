@@ -865,7 +865,7 @@ func main() {
 	router.HandleFunc("/api/v1/trips/", trips).Methods("GET")
 	router.HandleFunc("/api/v1/trips/{tripid}", trip).Methods("GET", "PUT", "POST")
 
-	handler := cors.Default().Handler(router)
+	handler := cors.AllowAll().Handler(router)
 
 	fmt.Println("Listening at port 5000")
 	log.Fatal(http.ListenAndServe(":5000", handler))
