@@ -26,9 +26,8 @@ type Driver struct {
 	CarLicenseNumber     string `json:"car_license_number"`
 	AvailableStatus      int    `json:"available_status"`
 	// 0 -> used by golang to indicate whether the integer variable has been initialised or not
-	// 1 => Offline
-	// 2 => Online and available
-	// 3 => Online and during the trip
+	// 1 => Online and available
+	// 2 => Online and during the trip
 }
 
 type Passenger struct {
@@ -612,7 +611,7 @@ func formmatedTripQueryField(body TripsRequestBody) string {
 		results += fmt.Sprintf("t.PassengerID = %s", body.PassengerID)
 	}
 
-	return results
+	return results + " AND TripProgress=3" // filter only completed trip
 }
 
 func trip(res http.ResponseWriter, req *http.Request) {
@@ -686,7 +685,7 @@ func trip(res http.ResponseWriter, req *http.Request) {
 				}
 
 				if !isTripExist {
-					query := fmt.Sprintf("INSERT INTO Trips VALUES ('%s', '%s', '%s', '%s', '%s', '%d', '%d', NULL)", newTrip.TripID, newTrip.PassengerID, newTrip.DriverID, newTrip.PickupPostalCode, newTrip.DropoffPostalCode, 1, currentMs())
+					query := fmt.Sprintf("INSERT INTO Trips VALUES ('%s', '%s', NULL, '%s', '%s', '%d', '%d', NULL)", newTrip.TripID, newTrip.PassengerID, newTrip.PickupPostalCode, newTrip.DropoffPostalCode, 1, currentMs())
 
 					_, err := db.Query(query)
 
@@ -800,6 +799,10 @@ func updateTripCompletedTime(tripid string) {
 
 func formattedUpdateTripQueryField(trip Trip) string {
 	var results string
+
+	if trip.DriverID != "" {
+		results += fmt.Sprintf("DriverID='%s'", trip.DriverID)
+	}
 
 	if trip.TripProgress != 0 {
 		results += fmt.Sprintf("TripProgress='%d'", trip.TripProgress)

@@ -29,7 +29,7 @@ CREATE TABLE Trips
 (
     TripID VARCHAR(36) NOT NULL,
     PassengerID VARCHAR(36) NOT NULL,
-    DriverID VARCHAR(36) NOT NULL,
+    DriverID VARCHAR(36) NULL,
     PickupPostalCode VARCHAR(10) NOT NULL,
     DropoffPostalCode VARCHAR(10) NOT NULL,
     TripProgress TINYINT(1) NOT NULL,
