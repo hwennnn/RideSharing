@@ -10,7 +10,7 @@ export default function LoginPassenger() {
 
     function loginAsPassenger() {
         if (passengerID != '') {
-            Router.push(`/driver/${passengerID}`)
+            Router.push(`/passenger/${passengerID}`)
         }
     }
 
