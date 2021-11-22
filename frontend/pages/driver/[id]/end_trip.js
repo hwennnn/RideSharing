@@ -1,7 +1,6 @@
 import { getStaticPathForDrivers } from '../../../utils/driver-utils';
 
 export async function getStaticProps({ params }) {
-    // Add the "await" keyword like this:
     const id = params.id
     return {
         props: {

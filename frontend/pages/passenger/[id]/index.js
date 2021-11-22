@@ -4,7 +4,6 @@ import Link from 'next/link'
 import styles from '../../../styles/Home.module.css'
 
 export async function getStaticProps({ params }) {
-    // Add the "await" keyword like this:
     const passengerID = params.id
     const passenger = await getPassenger(passengerID);
     return {

@@ -9,7 +9,6 @@ import baseUrl from '../../../utils/baseUrl';
 
 
 export async function getStaticProps({ params }) {
-    // Add the "await" keyword like this:
     const driverID = params.id
     const driver = await getDriver(driverID);
     return {
