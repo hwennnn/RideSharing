@@ -23,7 +23,7 @@ export async function getStaticPaths() {
     }
 }
 
-export default function DriverHome({ passenger_id, last_name, first_name, available_status }) {
+export default function DriverHome({ passenger_id, last_name, first_name }) {
     let editProfileLink = `${passenger_id}/edit`;
     let viewTripLink = `${passenger_id}/trips`
 
@@ -46,7 +46,7 @@ export default function DriverHome({ passenger_id, last_name, first_name, availa
                     <Link href={editProfileLink}>
                         <a className={styles.card}>
                             <h2>Edit passenger profile &rarr;</h2>
-                            <p>Edit your passenger profile except <span className={styles.blueColor}> identification number </span></p>
+                            <p>Edit your passenger profile to keep your profile <span className={styles.blueColor}> up-to-date </span></p>
                         </a>
                     </Link>
 
