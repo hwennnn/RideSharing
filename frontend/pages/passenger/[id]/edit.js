@@ -4,7 +4,6 @@ import { Button, Input, Form } from 'semantic-ui-react'
 import styles from '../../../styles/Home.module.css'
 import Head from 'next/head'
 import Router from 'next/router';
-import { uuid } from 'uuidv4';
 import axios from 'axios';
 import baseUrl from '../../../utils/baseUrl';
 
