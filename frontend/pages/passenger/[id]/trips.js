@@ -8,7 +8,7 @@ import styles from '../../../styles/Home.module.css'
 export async function getStaticProps({ params }) {
     const passengerID = params.id
     const trips = await retrieveTripsForPassenger(passengerID);
-    console.log(trips)
+
     return {
         props: {
             trips
@@ -27,7 +27,7 @@ export async function getStaticPaths() {
 
 export default function ViewTrips({ trips }) {
 
-    const rows = trips.map(function (trip) {
+    const rows = trips != null ? trips.map(function (trip) {
         return (
             <Table.Row key={trip.trip_id}>
                 <Table.Cell>{trip.trip_id}</Table.Cell>
@@ -39,7 +39,7 @@ export default function ViewTrips({ trips }) {
                 <Table.Cell>{trip.completed_time}</Table.Cell>
             </Table.Row>
         )
-    })
+    }) : 'There is no completed trip to view yet'
 
     return (
 

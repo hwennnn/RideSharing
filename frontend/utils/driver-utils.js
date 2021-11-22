@@ -18,3 +18,9 @@ export async function getDriver(driverID) {
 
     return response.data
 }
+
+export async function retrieveTripsForDriver(driverID) {
+    const response = await axios.get(`${baseUrl}/trips?driver_id=${driverID}`)
+
+    return response.data
+}
