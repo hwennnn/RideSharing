@@ -19,8 +19,8 @@ export async function getStaticPaths() {
     }
 }
 
-export default function EditPassenger({ id }) {
+export default function ViewTrips({ id }) {
     return (
-        'edit passenger' + id
+        'view trips as passenger' + id
     )
 }

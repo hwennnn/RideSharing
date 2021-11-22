@@ -1,4 +1,4 @@
-import { getStaticPathForDrivers } from '../../../utils/utils';
+import { getStaticPathForDrivers } from '../../../utils/driver-utils';
 
 export async function getStaticProps({ params }) {
     // Add the "await" keyword like this:

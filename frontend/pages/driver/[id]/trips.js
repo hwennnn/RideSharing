@@ -1,4 +1,4 @@
-import { getStaticPathForPassengers } from '../../../utils/passenger-utils';
+import { getStaticPathForDrivers } from '../../../utils/driver-utils';
 
 export async function getStaticProps({ params }) {
     // Add the "await" keyword like this:
@@ -11,7 +11,7 @@ export async function getStaticProps({ params }) {
 }
 
 export async function getStaticPaths() {
-    const paths = await getStaticPathForPassengers();
+    const paths = await getStaticPathForDrivers();
 
     return {
         paths,
@@ -19,8 +19,8 @@ export async function getStaticPaths() {
     }
 }
 
-export default function EditPassenger({ id }) {
+export default function ViewTrips({ id }) {
     return (
-        'edit passenger' + id
+        'view trips as driver' + id
     )
 }
