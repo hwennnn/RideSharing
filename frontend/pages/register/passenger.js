@@ -2,6 +2,10 @@ import React, { useState } from 'react'
 import { Button, Input, Form } from 'semantic-ui-react'
 import styles from '../../styles/Home.module.css'
 import Head from 'next/head'
+import Router from 'next/router';
+import { uuid } from 'uuidv4';
+import axios from 'axios';
+import baseUrl from '../../utils/baseUrl';
 
 export default function RegisterPassenger() {
 
@@ -10,9 +14,29 @@ export default function RegisterPassenger() {
     const [mobileNumber, setMobileNumber] = useState('')
     const [emailAddress, setEmailAddress] = useState('')
 
-    function registerAsPassenger() {
+    async function registerAsPassenger() {
         if (firstName != '' && lastName != '' && mobileNumber != '' && emailAddress != '') {
             console.log(firstName, lastName, mobileNumber, emailAddress)
+
+            let passengerID = uuid()
+            var body = {
+                "passenger_id": passengerID,
+                "first_name": firstName,
+                "last_name": lastName,
+                "mobile_number": mobileNumber,
+                "email_address": emailAddress,
+            }
+            try {
+                let response = await axios.post(`${baseUrl}/passengers/${passengerID}`, body);
+                if (response.status == 201) {
+                    console.log(response.data)
+                    Router.push(`/passenger/${passengerID}`)
+                } else {
+                    alert(response.data)
+                }
+            } catch (err) {
+                alert(err)
+            }
         }
     }
 

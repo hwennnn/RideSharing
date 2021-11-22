@@ -4,7 +4,7 @@ USE RideSharing;
 
 CREATE TABLE Passengers
 (
-    PassengerID VARCHAR(30) NOT NULL,
+    PassengerID VARCHAR(36) NOT NULL,
     FirstName VARCHAR(30) NOT NULL,
     LastName VARCHAR(30) NOT NULL,
     MobileNumber VARCHAR(15) NOT NULL,
@@ -14,7 +14,7 @@ CREATE TABLE Passengers
 
 CREATE TABLE Drivers
 (
-    DriverID VARCHAR(30) NOT NULL,
+    DriverID VARCHAR(36) NOT NULL,
     FirstName VARCHAR(30) NOT NULL,
     LastName VARCHAR(30) NOT NULL,
     MobileNumber VARCHAR(15) NOT NULL,
@@ -27,9 +27,9 @@ CREATE TABLE Drivers
 
 CREATE TABLE Trips
 (
-    TripID VARCHAR(30) NOT NULL,
-    PassengerID VARCHAR(30) NOT NULL,
-    DriverID VARCHAR(30) NOT NULL,
+    TripID VARCHAR(36) NOT NULL,
+    PassengerID VARCHAR(36) NOT NULL,
+    DriverID VARCHAR(36) NOT NULL,
     PickupPostalCode VARCHAR(10) NOT NULL,
     DropoffPostalCode VARCHAR(10) NOT NULL,
     TripProgress TINYINT(1) NOT NULL,

@@ -2,6 +2,10 @@ import React, { useState } from 'react'
 import { Button, Input, Form } from 'semantic-ui-react'
 import styles from '../../styles/Home.module.css'
 import Head from 'next/head'
+import { uuid } from 'uuidv4';
+import axios from 'axios';
+import baseUrl from '../../utils/baseUrl';
+import Router from 'next/router';
 
 export default function RegisterDriver() {
 
@@ -12,9 +16,30 @@ export default function RegisterDriver() {
     const [identificationNumber, setIdentificationNumber] = useState('')
     const [carLicenseNumber, setCarLicenseNumber] = useState('')
 
-    function registerAsDriver() {
+    async function registerAsDriver() {
         if (firstName != '' && lastName != '' && mobileNumber != '' && emailAddress != '' && identificationNumber != '' && carLicenseNumber != '') {
-            console.log(firstName, lastName, mobileNumber, emailAddress, identificationNumber, carLicenseNumber)
+            let driverID = uuid()
+            var body = {
+                "driver_id": driverID,
+                "first_name": firstName,
+                "last_name": lastName,
+                "mobile_number": mobileNumber,
+                "email_address": emailAddress,
+                "identification_number": identificationNumber,
+                "car_license_number": carLicenseNumber
+            }
+            try {
+                let response = await axios.post(`${baseUrl}/drivers/${driverID}`, body);
+
+                if (response.status == 201) {
+                    console.log(response.data)
+                    Router.push(`/driver/${driverID}`)
+                } else {
+                    alert(response.data)
+                }
+            } catch (err) {
+                alert(err)
+            }
         }
     }
 
