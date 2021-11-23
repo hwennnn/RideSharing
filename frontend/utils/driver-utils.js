@@ -30,3 +30,15 @@ export async function retrieveAvailableTripsForDriver() {
 
     return response.data
 }
+
+export async function initiateTripAsDriver(trip_id, driver_id) {
+    const body = {
+        "trip_id": trip_id,
+        "driver_id": driver_id,
+        "trip_progress": 2
+    }
+    console.log(body, `${baseUrl}/trips/${trip_id}`)
+    const response = await axios.put(`${baseUrl}/trips/${trip_id}`, body)
+
+    return response
+}

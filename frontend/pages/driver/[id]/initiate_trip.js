@@ -2,7 +2,8 @@ import React from 'react'
 import Head from 'next/head'
 import { Button, Table } from 'semantic-ui-react'
 import styles from '../../../styles/Home.module.css'
-import { getStaticPathForDrivers, retrieveAvailableTripsForDriver } from '../../../utils/driver-utils'
+import { getStaticPathForDrivers, initiateTripAsDriver, retrieveAvailableTripsForDriver } from '../../../utils/driver-utils'
+import Router from 'next/router';
 
 export async function getStaticProps({ params }) {
     const driverID = params.id
@@ -10,6 +11,7 @@ export async function getStaticProps({ params }) {
 
     return {
         props: {
+            driverID,
             trips
         }
     }
@@ -24,7 +26,7 @@ export async function getStaticPaths() {
     }
 }
 
-export default function ViewTrips({ trips }) {
+export default function ViewTrips({ driverID, trips }) {
 
     const rows = trips != null ? trips.map(function (trip) {
         return (
@@ -36,10 +38,19 @@ export default function ViewTrips({ trips }) {
                 <Table.Cell>{trip.dropoff_postal_code}</Table.Cell>
                 <Table.Cell>{trip.created_time}</Table.Cell>
                 <Table.Cell>{trip.completed_time}</Table.Cell>
-                <Table.Cell><Button>Initiate</Button></Table.Cell>
+                <Table.Cell><Button onClick={() => initiateTrip(trip.trip_id)} >Initiate</Button></Table.Cell>
             </Table.Row>
         )
-    }) : 'There is no completed trip to view yet'
+    }) : 'There is no available trip to be initiated yet'
+
+    async function initiateTrip(trip_id) {
+        let response = await initiateTripAsDriver(trip_id, driverID)
+        if (response.status == 202) {
+            Router.push(`/driver/${driverID}`)
+        } else {
+            alert(response.data)
+        }
+    }
 
     return (
 

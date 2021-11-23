@@ -44,8 +44,9 @@ type Passenger struct {
 }
 
 type Trip struct {
-	TripID            string    `json:"trip_id"`
-	PassengerID       string    `json:"passenger_id"`
+	TripID            string `json:"trip_id"`
+	PassengerID       string `json:"passenger_id"`
+	sqlDriverID       sql.NullString
 	DriverID          string    `json:"driver_id"`
 	PickupPostalCode  string    `json:"pickup_postal_code"`
 	DropoffPostalCode string    `json:"dropoff_postal_code"`
@@ -568,8 +569,11 @@ func trips(res http.ResponseWriter, req *http.Request) {
 
 	// convert JSON to object
 	formmatedFieldQuery := formmatedTripQueryField(params["driver_id"], params["passenger_id"], params["trip_progress"])
-
-	query := fmt.Sprintf("SELECT * FROM Trips t INNER JOIN Drivers d ON t.DriverID = d.DriverID INNER JOIN Passengers p ON t.PassengerID = p.PassengerID WHERE %s", formmatedFieldQuery)
+	innerJoinQuery := "INNER JOIN Passengers p ON t.PassengerID = p.PassengerID"
+	if len(params["driver_id"]) > 0 {
+		innerJoinQuery += " INNER JOIN Drivers d ON t.DriverID = d.DriverID"
+	}
+	query := fmt.Sprintf("SELECT * FROM Trips t %s WHERE %s", innerJoinQuery, formmatedFieldQuery)
 	fmt.Println(query)
 	databaseResults, err := db.Query(query)
 
@@ -580,7 +584,14 @@ func trips(res http.ResponseWriter, req *http.Request) {
 
 	for databaseResults.Next() {
 		var trip Trip
-		err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.DriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.CreatedTime, &trip.CompletedTime, &trip.Driver.DriverID, &trip.Driver.FirstName, &trip.Driver.LastName, &trip.Driver.MobileNumber, &trip.Driver.EmailAddress, &trip.Driver.IdentificationNumber, &trip.Driver.CarLicenseNumber, &trip.Driver.AvailableStatus, &trip.Passenger.PassengerID, &trip.Passenger.FirstName, &trip.Passenger.LastName, &trip.Passenger.MobileNumber, &trip.Passenger.EmailAddress, &trip.Passenger.AvailableStatus)
+		if len(params["driver_id"]) > 0 {
+			err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.DriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.CreatedTime, &trip.CompletedTime, &trip.Driver.DriverID, &trip.Driver.FirstName, &trip.Driver.LastName, &trip.Driver.MobileNumber, &trip.Driver.EmailAddress, &trip.Driver.IdentificationNumber, &trip.Driver.CarLicenseNumber, &trip.Driver.AvailableStatus, &trip.Passenger.PassengerID, &trip.Passenger.FirstName, &trip.Passenger.LastName, &trip.Passenger.MobileNumber, &trip.Passenger.EmailAddress, &trip.Passenger.AvailableStatus)
+		} else {
+			err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.sqlDriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.CreatedTime, &trip.CompletedTime, &trip.Passenger.PassengerID, &trip.Passenger.FirstName, &trip.Passenger.LastName, &trip.Passenger.MobileNumber, &trip.Passenger.EmailAddress, &trip.Passenger.AvailableStatus)
+			if trip.sqlDriverID.Valid {
+				trip.DriverID = trip.sqlDriverID.String
+			}
+		}
 		if err != nil {
 			panic(err.Error())
 		}
@@ -730,6 +741,7 @@ func trip(res http.ResponseWriter, req *http.Request) {
 
 			// check if trip exists; add only if trip does not exist
 			query := fmt.Sprintf("SELECT * FROM Trips WHERE TripID='%s'", tripid)
+			fmt.Println(query)
 			databaseResults, err := db.Query(query)
 			if err != nil {
 				panic(err.Error())
@@ -744,6 +756,8 @@ func trip(res http.ResponseWriter, req *http.Request) {
 				err = databaseResults.Scan(&tripFromDatabase.TripID, &tripFromDatabase.PassengerID, &tripFromDatabase.DriverID, &tripFromDatabase.PickupPostalCode, &tripFromDatabase.DropoffPostalCode, &tripFromDatabase.TripProgress, &tripFromDatabase.CreatedTime, &tripFromDatabase.CompletedTime, &tripFromDatabase.Driver.DriverID, &tripFromDatabase.Driver.FirstName, &tripFromDatabase.Driver.LastName, &tripFromDatabase.Driver.MobileNumber, &tripFromDatabase.Driver.EmailAddress, &tripFromDatabase.Driver.IdentificationNumber, &tripFromDatabase.Driver.CarLicenseNumber, &tripFromDatabase.Driver.AvailableStatus, &tripFromDatabase.Passenger.PassengerID, &tripFromDatabase.Passenger.FirstName, &tripFromDatabase.Passenger.LastName, &tripFromDatabase.Passenger.MobileNumber, &tripFromDatabase.Passenger.EmailAddress)
 				isTripExist = true
 			}
+
+			fmt.Println(isTripExist, tripFromDatabase.TripID)
 
 			if !isTripExist {
 				if !isTripJsonCompleted(newTrip) {
@@ -770,16 +784,19 @@ func trip(res http.ResponseWriter, req *http.Request) {
 					res.Write([]byte("422 - Please supply trip information in JSON format"))
 					return
 				}
-
-				if tripFromDatabase.TripProgress != 3 && newTrip.TripProgress == 3 {
+				fmt.Println(tripFromDatabase.TripProgress, newTrip.TripProgress)
+				if tripFromDatabase.TripProgress != 2 && newTrip.TripProgress == 2 {
 					// update driver and passenger available status back to 1 once the trip is completed
-					updateDriverAvailableStatus(1, tripFromDatabase.DriverID)
-					updatePassengerAvailableStatus(1, tripFromDatabase.PassengerID)
+					updateDriverAvailableStatus(2, newTrip.DriverID)
+				} else if tripFromDatabase.TripProgress != 3 && newTrip.TripProgress == 3 {
+					// update driver and passenger available status back to 1 once the trip is completed
+					updateDriverAvailableStatus(1, newTrip.DriverID)
+					updatePassengerAvailableStatus(1, newTrip.PassengerID)
 					updateTripCompletedTime(tripid)
 				}
 
 				query := fmt.Sprintf("UPDATE Trips SET %s WHERE TripID='%s'", formattedUpdateFieldQuery, newTrip.TripID)
-
+				fmt.Println(query)
 				_, err := db.Query(query)
 
 				if err != nil {
@@ -799,7 +816,7 @@ func trip(res http.ResponseWriter, req *http.Request) {
 
 func updateDriverAvailableStatus(availableStatus int, driverID string) {
 	query := fmt.Sprintf("UPDATE Drivers SET AvailableStatus='%d' WHERE DriverID='%s'", availableStatus, driverID)
-
+	fmt.Println(query)
 	_, err := db.Query(query)
 
 	if err != nil {
@@ -828,17 +845,17 @@ func updateTripCompletedTime(tripid string) {
 }
 
 func formattedUpdateTripQueryField(trip Trip) string {
-	var results string
+	var fields []string
 
 	if trip.DriverID != "" {
-		results += fmt.Sprintf("DriverID='%s'", trip.DriverID)
+		fields = append(fields, fmt.Sprintf("DriverID='%s'", trip.DriverID))
 	}
 
 	if trip.TripProgress != 0 {
-		results += fmt.Sprintf("TripProgress='%d'", trip.TripProgress)
+		fields = append(fields, fmt.Sprintf("TripProgress='%d'", trip.TripProgress))
 	}
 
-	return results
+	return strings.Join(fields, ", ")
 }
 
 func isTripJsonCompleted(trip Trip) bool {
