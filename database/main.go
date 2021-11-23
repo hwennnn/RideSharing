@@ -753,7 +753,7 @@ func trip(res http.ResponseWriter, req *http.Request) {
 				if err != nil {
 					panic(err.Error())
 				}
-				err = databaseResults.Scan(&tripFromDatabase.TripID, &tripFromDatabase.PassengerID, &tripFromDatabase.DriverID, &tripFromDatabase.PickupPostalCode, &tripFromDatabase.DropoffPostalCode, &tripFromDatabase.TripProgress, &tripFromDatabase.CreatedTime, &tripFromDatabase.CompletedTime, &tripFromDatabase.Driver.DriverID, &tripFromDatabase.Driver.FirstName, &tripFromDatabase.Driver.LastName, &tripFromDatabase.Driver.MobileNumber, &tripFromDatabase.Driver.EmailAddress, &tripFromDatabase.Driver.IdentificationNumber, &tripFromDatabase.Driver.CarLicenseNumber, &tripFromDatabase.Driver.AvailableStatus, &tripFromDatabase.Passenger.PassengerID, &tripFromDatabase.Passenger.FirstName, &tripFromDatabase.Passenger.LastName, &tripFromDatabase.Passenger.MobileNumber, &tripFromDatabase.Passenger.EmailAddress)
+				err = databaseResults.Scan(&tripFromDatabase.TripID, &tripFromDatabase.PassengerID, &tripFromDatabase.DriverID, &tripFromDatabase.PickupPostalCode, &tripFromDatabase.DropoffPostalCode, &tripFromDatabase.TripProgress, &tripFromDatabase.CreatedTime, &tripFromDatabase.CompletedTime)
 				isTripExist = true
 			}
 
@@ -788,8 +788,8 @@ func trip(res http.ResponseWriter, req *http.Request) {
 					updateDriverAvailableStatus(2, newTrip.DriverID)
 				} else if tripFromDatabase.TripProgress != 3 && newTrip.TripProgress == 3 {
 					// update driver and passenger available status back to 1 once the trip is completed
-					updateDriverAvailableStatus(1, newTrip.DriverID)
-					updatePassengerAvailableStatus(1, newTrip.PassengerID)
+					updateDriverAvailableStatus(1, tripFromDatabase.DriverID)
+					updatePassengerAvailableStatus(1, tripFromDatabase.PassengerID)
 					updateTripCompletedTime(tripid)
 				}
 
@@ -833,7 +833,7 @@ func updatePassengerAvailableStatus(availableStatus int, passengerID string) {
 }
 
 func updateTripCompletedTime(tripid string) {
-	query := fmt.Sprintf("UPDATE Trips SET CompletedTime=%d WHERE TripID=%s", currentMs(), tripid)
+	query := fmt.Sprintf("UPDATE Trips SET CompletedTime='%d' WHERE TripID='%s'", currentMs(), tripid)
 
 	_, err := db.Query(query)
 
