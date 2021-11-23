@@ -63,6 +63,8 @@ type Trip struct {
 
 var db *sql.DB
 
+const authenticationToken = "1467a2a8-fff7-45b5-986d-679382d0707a"
+
 func currentMs() int64 {
 	return time.Now().Round(time.Millisecond).UnixNano() / 1e6
 }
@@ -865,26 +867,19 @@ func isTripJsonCompleted(trip Trip) bool {
 	return tripID != "" && passengerID != "" && pickupPostalCode != "" && dropoffPostalCode != ""
 }
 
-// func setupCorsResponse(res *http.ResponseWriter, req *http.Request) {
-// 	res.Header().Set("Access-Control-Allow-Origin", "*")
-// 	res.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-// 	res.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Authorization")
-// }
-
 func middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		// TODO: Authenticate requests by token
-		// token := req.Header.Get("X-Session-Token")
+		// Authenticate requests by token
+		reqToken := req.Header.Get("Authorization")
+		splitToken := strings.Split(reqToken, "Bearer ")
 
-		// if user, found := amw.tokenUsers[token]; found {
-		// 	// We found the token in our map
-		// 	log.Printf("Authenticated user %s\n", user)
-		// 	next.ServeHTTP(w, r)
-		// } else {
-		// 	http.Error(w, "Forbidden", http.StatusForbidden)
-		// }
-		res.Header().Set("Content-Type", "application/json")
-		next.ServeHTTP(res, req)
+		if len(splitToken) >= 2 && splitToken[1] == authenticationToken {
+			// if the token is valid
+			res.Header().Set("Content-Type", "application/json")
+			next.ServeHTTP(res, req)
+		} else {
+			http.Error(res, "Access Forbidden", http.StatusForbidden)
+		}
 	})
 }
 
