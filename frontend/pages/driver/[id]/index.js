@@ -24,7 +24,7 @@ export async function getStaticPaths() {
 
 export default function DriverHome({ driver_id, last_name, first_name, available_status }) {
     let editProfileLink = `${driver_id}/edit`;
-    let viewTripLink = `${driver_id}/trips`
+    let viewTripsLink = `${driver_id}/view_trips`
     let initiateTrip = `${driver_id}/initiate_trip`
     let endTrip = `${driver_id}/end_trip`
 
@@ -75,7 +75,7 @@ export default function DriverHome({ driver_id, last_name, first_name, available
                         </a>
                     </Link>
 
-                    <Link href={viewTripLink}>
+                    <Link href={viewTripsLink}>
                         <a className={styles.card}>
                             <h2>View past trips &rarr;</h2>
                             <p>View past completed trips in the table</p>
