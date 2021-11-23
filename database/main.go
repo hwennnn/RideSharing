@@ -572,7 +572,7 @@ func trips(res http.ResponseWriter, req *http.Request) {
 	// convert JSON to object
 	formmatedFieldQuery := formmatedTripQueryField(params["driver_id"], params["passenger_id"], params["trip_progress"])
 	innerJoinQuery := "INNER JOIN Passengers p ON t.PassengerID = p.PassengerID"
-	if len(params["driver_id"]) > 0 {
+	if len(params["driver_id"]) > 0 || (len(params["trip_progress"]) > 0 && params["trip_progress"][0] == "3") {
 		innerJoinQuery += " INNER JOIN Drivers d ON t.DriverID = d.DriverID"
 	}
 	query := fmt.Sprintf("SELECT * FROM Trips t %s WHERE %s", innerJoinQuery, formmatedFieldQuery)
@@ -586,7 +586,7 @@ func trips(res http.ResponseWriter, req *http.Request) {
 
 	for databaseResults.Next() {
 		var trip Trip
-		if len(params["driver_id"]) > 0 {
+		if len(params["driver_id"]) > 0 || (len(params["trip_progress"]) > 0 && params["trip_progress"][0] == "3") {
 			err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.DriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.CreatedTime, &trip.CompletedTime, &trip.Passenger.PassengerID, &trip.Passenger.FirstName, &trip.Passenger.LastName, &trip.Passenger.MobileNumber, &trip.Passenger.EmailAddress, &trip.Passenger.AvailableStatus, &trip.Driver.DriverID, &trip.Driver.FirstName, &trip.Driver.LastName, &trip.Driver.MobileNumber, &trip.Driver.EmailAddress, &trip.Driver.IdentificationNumber, &trip.Driver.CarLicenseNumber, &trip.Driver.AvailableStatus)
 		} else {
 			err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.sqlDriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.CreatedTime, &trip.CompletedTime, &trip.Passenger.PassengerID, &trip.Passenger.FirstName, &trip.Passenger.LastName, &trip.Passenger.MobileNumber, &trip.Passenger.EmailAddress, &trip.Passenger.AvailableStatus)
