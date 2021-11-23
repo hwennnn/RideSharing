@@ -22,9 +22,11 @@ export async function getStaticPaths() {
     }
 }
 
-export default function DriverHome({ passenger_id, last_name, first_name }) {
+export default function DriverHome({ passenger_id, last_name, first_name, available_status }) {
     let editProfileLink = `${passenger_id}/edit`;
-    let viewTripLink = `${passenger_id}/trips`
+    let viewTripsLink = `${passenger_id}/view_trips`
+    let createTripLink = `${passenger_id}/create_trip`
+
 
     return (
         <div className={styles.container}>
@@ -39,9 +41,24 @@ export default function DriverHome({ passenger_id, last_name, first_name }) {
                     U are now signed in as {last_name} {first_name} #{passenger_id}
                 </h1>
 
+                {available_status == 2 &&
+                    <p className={styles.description}>
+                        You are in the middle of the trip right now
+                    </p>
+                }
+
                 <br />
 
                 <div className={styles.grid}>
+                    {available_status == 1 &&
+                        <Link href={createTripLink}>
+                            <a className={styles.card}>
+                                <h2>Create Trip &rarr;</h2>
+                                <p>Create a trip and the platform will assign an <span className={styles.blueColor}> available </span>driver for you</p>
+                            </a>
+                        </Link>
+                    }
+
                     <Link href={editProfileLink}>
                         <a className={styles.card}>
                             <h2>Edit passenger profile &rarr;</h2>
@@ -49,7 +66,7 @@ export default function DriverHome({ passenger_id, last_name, first_name }) {
                         </a>
                     </Link>
 
-                    <Link href={viewTripLink}>
+                    <Link href={viewTripsLink}>
                         <a className={styles.card}>
                             <h2>View past trips &rarr;</h2>
                             <p>View past completed trips in the table</p>
