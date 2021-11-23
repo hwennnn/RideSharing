@@ -3,7 +3,7 @@ import Head from 'next/head'
 import { Table } from 'semantic-ui-react'
 import styles from '../../../styles/Home.module.css'
 import { getStaticPathForDrivers, retrieveCompletedTripsForDriver } from '../../../utils/driver-utils'
-
+import { formatDateStringFromMs } from '../../../utils/date-utils'
 
 export async function getStaticProps({ params }) {
     const driverID = params.id
@@ -35,8 +35,8 @@ export default function ViewTrips({ trips }) {
                 <Table.Cell>{`${trip.driver.last_name} ${trip.driver.first_name} #${trip.driver.driver_id}`}</Table.Cell>
                 <Table.Cell>{trip.pickup_postal_code}</Table.Cell>
                 <Table.Cell>{trip.dropoff_postal_code}</Table.Cell>
-                <Table.Cell>{trip.created_time}</Table.Cell>
-                <Table.Cell>{trip.completed_time}</Table.Cell>
+                <Table.Cell>{formatDateStringFromMs(trip.created_time)}</Table.Cell>
+                <Table.Cell>{formatDateStringFromMs(trip.completed_time)}</Table.Cell>
             </Table.Row>
         )
     }) : 'There is no completed trip to view yet'

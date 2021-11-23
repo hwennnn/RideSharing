@@ -4,6 +4,7 @@ import Head from 'next/head'
 import { Table, Button } from 'semantic-ui-react'
 import styles from '../../../styles/Home.module.css'
 import Router from 'next/router';
+import { formatDateStringFromMs } from '../../../utils/date-utils'
 
 
 export async function getStaticProps({ params }) {
@@ -73,8 +74,8 @@ export default function EndTrip({ trip }) {
                         <Table.Cell>{`${trip.driver.last_name} ${trip.driver.first_name} #${trip.driver.driver_id}`}</Table.Cell>
                         <Table.Cell>{trip.pickup_postal_code}</Table.Cell>
                         <Table.Cell>{trip.dropoff_postal_code}</Table.Cell>
-                        <Table.Cell>{trip.created_time}</Table.Cell>
-                        <Table.Cell>{trip.completed_time}</Table.Cell>
+                        <Table.Cell>{formatDateStringFromMs(trip.created_time)}</Table.Cell>
+                        <Table.Cell>{formatDateStringFromMs(trip.completed_time)}</Table.Cell>
                         <Table.Cell><Button onClick={() => endTrip()} >End Trip</Button></Table.Cell>
                     </Table.Row>
                 </Table.Body>
