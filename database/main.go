@@ -690,7 +690,7 @@ func trip(res http.ResponseWriter, req *http.Request) {
 				}
 
 				if !isTripExist {
-					query := fmt.Sprintf("INSERT INTO Trips VALUES ('%s', '%s', NULL, '%s', '%s', '%d', '%d', NULL)", newTrip.TripID, newTrip.PassengerID, newTrip.PickupPostalCode, newTrip.DropoffPostalCode, 1, currentMs())
+					query := fmt.Sprintf("INSERT INTO Trips VALUES ('%s', '%s', NULL, '%s', '%s', '%d', '%d', '%d')", newTrip.TripID, newTrip.PassengerID, newTrip.PickupPostalCode, newTrip.DropoffPostalCode, 1, currentMs(), 0)
 
 					_, err := db.Query(query)
 
@@ -752,7 +752,7 @@ func trip(res http.ResponseWriter, req *http.Request) {
 					return
 				}
 
-				query := fmt.Sprintf("INSERT INTO Trips VALUES ('%s', '%s', '%s', '%s', '%s', '%d', '%d', NULL)", newTrip.TripID, newTrip.PassengerID, newTrip.DriverID, newTrip.PickupPostalCode, newTrip.DropoffPostalCode, 1, currentMs())
+				query := fmt.Sprintf("INSERT INTO Trips VALUES ('%s', '%s', NULL, '%s', '%s', '%d', '%d', '%d')", newTrip.TripID, newTrip.PassengerID, newTrip.PickupPostalCode, newTrip.DropoffPostalCode, 1, currentMs(), 0)
 
 				_, err := db.Query(query)
 

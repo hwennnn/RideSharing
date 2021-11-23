@@ -63,4 +63,6 @@ UPDATE Trips SET TripProgress = 2 WHERE TripID = '3';
 SELECT * FROM Trips t
 INNER JOIN Drivers d ON t.DriverID = d.DriverID 
 INNER JOIN Passengers p ON t.PassengerID = p.PassengerID
-WHERE t.DriverID = '2'
+WHERE t.DriverID = '2';
+
+SELECT * FROM Trips t INNER JOIN Drivers d ON t.DriverID = d.DriverID INNER JOIN Passengers p ON t.PassengerID = p.PassengerID WHERE t.TripProgress = 1
