@@ -58,6 +58,9 @@ export default function EditPassenger({ passenger_id, first_name, last_name, mob
         }
     }
 
+    function backToPassengerHome() {
+        Router.push(`/passenger/${passenger_id}`)
+    }
 
     return (
         <div className={styles.container}>
@@ -99,6 +102,8 @@ export default function EditPassenger({ passenger_id, first_name, last_name, mob
                 <Button onClick={updateAsPassenger} type='submit'>Submit</Button>
             </Form>
 
+            <br />
+            <Button primary onClick={backToPassengerHome} type='submit'>Back To Home</Button>
         </div>
     );
 }

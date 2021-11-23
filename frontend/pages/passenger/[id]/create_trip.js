@@ -41,6 +41,10 @@ export default function CreateTrip({ passenger_id }) {
         }
     }
 
+    function backToPassengerHome() {
+        Router.push(`/passenger/${passenger_id}`)
+    }
+
     return (
         <div className={styles.container}>
             <Head>
@@ -70,6 +74,8 @@ export default function CreateTrip({ passenger_id }) {
                 <Button onClick={createTrip} type='submit'>Submit</Button>
             </Form>
 
+            <br />
+            <Button primary onClick={backToPassengerHome} type='submit'>Back To Home</Button>
         </div>
     )
 }

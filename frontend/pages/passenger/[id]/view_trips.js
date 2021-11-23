@@ -1,9 +1,10 @@
 import { getStaticPathForPassengers, retrieveCompletedTripsForPassenger } from '../../../utils/passenger-utils';
 import React from 'react'
 import Head from 'next/head'
-import { Table } from 'semantic-ui-react'
+import { Table, Button } from 'semantic-ui-react'
 import styles from '../../../styles/Home.module.css'
 import { formatDateStringFromMs } from '../../../utils/date-utils'
+import Router from 'next/router';
 
 
 export async function getStaticProps({ params }) {
@@ -12,6 +13,7 @@ export async function getStaticProps({ params }) {
 
     return {
         props: {
+            passengerID,
             trips
         }
     }
@@ -26,7 +28,11 @@ export async function getStaticPaths() {
     }
 }
 
-export default function ViewTrips({ trips }) {
+export default function ViewTrips({ passengerID, trips }) {
+
+    function backToPassengerHome() {
+        Router.push(`/passenger/${passengerID}`)
+    }
 
     const rows = trips != null ? trips.map(function (trip) {
         return (
@@ -76,6 +82,8 @@ export default function ViewTrips({ trips }) {
 
             </Table>
 
+            <br />
+            <Button primary onClick={backToPassengerHome} type='submit'>Back To Home</Button>
         </div>
     )
 }
