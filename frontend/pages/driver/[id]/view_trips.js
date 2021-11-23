@@ -1,9 +1,10 @@
 import React from 'react'
 import Head from 'next/head'
-import { Table } from 'semantic-ui-react'
+import { Table, Button } from 'semantic-ui-react'
 import styles from '../../../styles/Home.module.css'
 import { getStaticPathForDrivers, retrieveCompletedTripsForDriver } from '../../../utils/driver-utils'
 import { formatDateStringFromMs } from '../../../utils/date-utils'
+import Router from 'next/router';
 
 export async function getStaticProps({ params }) {
     const driverID = params.id
@@ -11,6 +12,7 @@ export async function getStaticProps({ params }) {
 
     return {
         props: {
+            driverID,
             trips
         }
     }
@@ -25,7 +27,12 @@ export async function getStaticPaths() {
     }
 }
 
-export default function ViewTrips({ trips }) {
+export default function ViewTrips({ driverID, trips }) {
+
+    function backToDriverHome() {
+        Router.push(`/driver/${driverID}`)
+    }
+
 
     const rows = trips != null ? trips.map(function (trip) {
         return (
@@ -75,6 +82,8 @@ export default function ViewTrips({ trips }) {
 
             </Table>
 
+            <br />
+            <Button primary onClick={backToDriverHome} type='submit'>Back To Home</Button>
         </div>
     )
 }

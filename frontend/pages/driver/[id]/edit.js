@@ -59,6 +59,9 @@ export default function EditDriver({ driver_id, first_name, last_name, mobile_nu
         }
     }
 
+    function backToDriverHome() {
+        Router.push(`/driver/${driver_id}`)
+    }
 
     return (
         <div className={styles.container}>
@@ -107,6 +110,8 @@ export default function EditDriver({ driver_id, first_name, last_name, mobile_nu
                 <Button onClick={updateAsDriver} type='submit'>Submit</Button>
             </Form>
 
+            <br />
+            <Button primary onClick={backToDriverHome} type='submit'>Back To Home</Button>
         </div>
     )
 }

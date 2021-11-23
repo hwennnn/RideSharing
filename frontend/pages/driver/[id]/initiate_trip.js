@@ -53,6 +53,10 @@ export default function ViewTrips({ driverID, trips }) {
         }
     }
 
+    function backToDriverHome() {
+        Router.push(`/driver/${driverID}`)
+    }
+
     return (
 
         <div className={styles.container}>
@@ -88,6 +92,8 @@ export default function ViewTrips({ driverID, trips }) {
 
             </Table>
 
+            <br />
+            <Button primary onClick={backToDriverHome} type='submit'>Back To Home</Button>
         </div>
     )
 }

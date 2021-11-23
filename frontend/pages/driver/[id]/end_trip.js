@@ -38,6 +38,10 @@ export default function EndTrip({ trip }) {
         }
     }
 
+    function backToDriverHome() {
+        Router.push(`/driver/${trip.driver.driver_id}`)
+    }
+
     return (
 
         <div className={styles.container}>
@@ -82,6 +86,8 @@ export default function EndTrip({ trip }) {
 
             </Table>
 
+            <br />
+            <Button primary onClick={backToDriverHome} type='submit'>Back To Home</Button>
         </div>
     )
 }
