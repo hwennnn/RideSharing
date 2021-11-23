@@ -20,8 +20,8 @@ export async function getPassenger(passengerID) {
     return response.data
 }
 
-export async function retrieveTripsForPassenger(passengerID) {
-    const response = await axios.get(`${baseUrl}/trips?passenger_id=${passengerID}`)
+export async function retrieveCompletedTripsForPassenger(passengerID) {
+    const response = await axios.get(`${baseUrl}/trips?passenger_id=${passengerID}&trip_progress=3`)
 
     return response.data
 }

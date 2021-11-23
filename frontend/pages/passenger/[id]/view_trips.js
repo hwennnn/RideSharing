@@ -1,4 +1,4 @@
-import { getStaticPathForPassengers, retrieveTripsForPassenger } from '../../../utils/passenger-utils';
+import { getStaticPathForPassengers, retrieveCompletedTripsForPassenger } from '../../../utils/passenger-utils';
 import React from 'react'
 import Head from 'next/head'
 import { Table } from 'semantic-ui-react'
@@ -7,7 +7,7 @@ import styles from '../../../styles/Home.module.css'
 
 export async function getStaticProps({ params }) {
     const passengerID = params.id
-    const trips = await retrieveTripsForPassenger(passengerID);
+    const trips = await retrieveCompletedTripsForPassenger(passengerID);
 
     return {
         props: {

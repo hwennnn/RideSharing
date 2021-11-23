@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -566,7 +567,7 @@ func trips(res http.ResponseWriter, req *http.Request) {
 	params := req.URL.Query()
 
 	// convert JSON to object
-	formmatedFieldQuery := formmatedTripQueryField(params["driver_id"], params["passenger_id"])
+	formmatedFieldQuery := formmatedTripQueryField(params["driver_id"], params["passenger_id"], params["trip_progress"])
 
 	query := fmt.Sprintf("SELECT * FROM Trips t INNER JOIN Drivers d ON t.DriverID = d.DriverID INNER JOIN Passengers p ON t.PassengerID = p.PassengerID WHERE %s", formmatedFieldQuery)
 	fmt.Println(query)
@@ -579,7 +580,7 @@ func trips(res http.ResponseWriter, req *http.Request) {
 
 	for databaseResults.Next() {
 		var trip Trip
-		err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.DriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.CreatedTime, &trip.CompletedTime, &trip.Driver.DriverID, &trip.Driver.FirstName, &trip.Driver.LastName, &trip.Driver.MobileNumber, &trip.Driver.EmailAddress, &trip.Driver.IdentificationNumber, &trip.Driver.CarLicenseNumber, &trip.Driver.AvailableStatus, &trip.Passenger.PassengerID, &trip.Passenger.FirstName, &trip.Passenger.LastName, &trip.Passenger.MobileNumber, &trip.Passenger.EmailAddress)
+		err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.DriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.CreatedTime, &trip.CompletedTime, &trip.Driver.DriverID, &trip.Driver.FirstName, &trip.Driver.LastName, &trip.Driver.MobileNumber, &trip.Driver.EmailAddress, &trip.Driver.IdentificationNumber, &trip.Driver.CarLicenseNumber, &trip.Driver.AvailableStatus, &trip.Passenger.PassengerID, &trip.Passenger.FirstName, &trip.Passenger.LastName, &trip.Passenger.MobileNumber, &trip.Passenger.EmailAddress, &trip.Passenger.AvailableStatus)
 		if err != nil {
 			panic(err.Error())
 		}
@@ -590,7 +591,7 @@ func trips(res http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(res).Encode(results)
 }
 
-func formmatedTripQueryField(driverID []string, passengerID []string) string {
+func formmatedTripQueryField(driverID []string, passengerID []string, tripProgress []string) string {
 	var results string
 	fmt.Println(driverID, passengerID)
 
@@ -606,11 +607,16 @@ func formmatedTripQueryField(driverID []string, passengerID []string) string {
 		results += fmt.Sprintf("t.PassengerID = '%s'", passengerID[0])
 	}
 
-	if results == "" {
-		return "t.TripProgress=3"
+	if len(tripProgress) > 0 && tripProgress[0] != "" {
+		if results != "" {
+			results += " AND "
+		}
+		parsedTripProgress, _ := strconv.ParseInt(tripProgress[0], 10, 64)
+
+		results += fmt.Sprintf("t.TripProgress = %d", parsedTripProgress)
 	}
 
-	return results + " AND t.TripProgress=3" // filter only completed trip
+	return results
 }
 
 func trip(res http.ResponseWriter, req *http.Request) {
@@ -627,7 +633,7 @@ func trip(res http.ResponseWriter, req *http.Request) {
 		var isExist bool
 		var trip Trip
 		for databaseResults.Next() {
-			err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.DriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.CreatedTime, &trip.CompletedTime, &trip.Driver.DriverID, &trip.Driver.FirstName, &trip.Driver.LastName, &trip.Driver.MobileNumber, &trip.Driver.EmailAddress, &trip.Driver.IdentificationNumber, &trip.Driver.CarLicenseNumber, &trip.Driver.AvailableStatus, &trip.Passenger.PassengerID, &trip.Passenger.FirstName, &trip.Passenger.LastName, &trip.Passenger.MobileNumber, &trip.Passenger.EmailAddress)
+			err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.DriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.CreatedTime, &trip.CompletedTime, &trip.Driver.DriverID, &trip.Driver.FirstName, &trip.Driver.LastName, &trip.Driver.MobileNumber, &trip.Driver.EmailAddress, &trip.Driver.IdentificationNumber, &trip.Driver.CarLicenseNumber, &trip.Driver.AvailableStatus, &trip.Passenger.PassengerID, &trip.Passenger.FirstName, &trip.Passenger.LastName, &trip.Passenger.MobileNumber, &trip.Passenger.EmailAddress, &trip.Passenger.AvailableStatus)
 			if err != nil {
 				panic(err.Error())
 			}

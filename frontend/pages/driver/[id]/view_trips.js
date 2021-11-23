@@ -2,12 +2,12 @@ import React from 'react'
 import Head from 'next/head'
 import { Table } from 'semantic-ui-react'
 import styles from '../../../styles/Home.module.css'
-import { getStaticPathForDrivers, retrieveTripsForDriver } from '../../../utils/driver-utils'
+import { getStaticPathForDrivers, retrieveCompletedTripsForDriver } from '../../../utils/driver-utils'
 
 
 export async function getStaticProps({ params }) {
     const driverID = params.id
-    const trips = await retrieveTripsForDriver(driverID);
+    const trips = await retrieveCompletedTripsForDriver(driverID);
 
     return {
         props: {
