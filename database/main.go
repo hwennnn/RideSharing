@@ -692,6 +692,8 @@ func trip(res http.ResponseWriter, req *http.Request) {
 						panic(err.Error())
 					}
 
+					updatePassengerAvailableStatus(2, newTrip.PassengerID)
+
 					res.WriteHeader(http.StatusCreated)
 					res.Write([]byte("201 - Trip added: " + tripid))
 				} else {
@@ -764,6 +766,9 @@ func trip(res http.ResponseWriter, req *http.Request) {
 				}
 
 				if tripFromDatabase.TripProgress != 3 && newTrip.TripProgress == 3 {
+					// update driver and passenger available status back to 1 once the trip is completed
+					updateDriverAvailableStatus(1, tripFromDatabase.DriverID)
+					updatePassengerAvailableStatus(1, tripFromDatabase.PassengerID)
 					updateTripCompletedTime(tripid)
 				}
 
@@ -783,6 +788,26 @@ func trip(res http.ResponseWriter, req *http.Request) {
 			res.WriteHeader(http.StatusUnprocessableEntity)
 			res.Write([]byte("422 - Please supply trip information in JSON format"))
 		}
+	}
+}
+
+func updateDriverAvailableStatus(availableStatus int, driverID string) {
+	query := fmt.Sprintf("UPDATE Drivers SET AvailableStatus='%d' WHERE DriverID='%s'", availableStatus, driverID)
+
+	_, err := db.Query(query)
+
+	if err != nil {
+		panic(err.Error())
+	}
+}
+
+func updatePassengerAvailableStatus(availableStatus int, passengerID string) {
+	query := fmt.Sprintf("UPDATE Passengers SET AvailableStatus='%d' WHERE PassengerID='%s'", availableStatus, passengerID)
+
+	_, err := db.Query(query)
+
+	if err != nil {
+		panic(err.Error())
 	}
 }
 
@@ -813,11 +838,10 @@ func formattedUpdateTripQueryField(trip Trip) string {
 func isTripJsonCompleted(trip Trip) bool {
 	tripID := strings.TrimSpace(trip.TripID)
 	passengerID := strings.TrimSpace(trip.PassengerID)
-	driverID := strings.TrimSpace(trip.DriverID)
 	pickupPostalCode := strings.TrimSpace(trip.PickupPostalCode)
 	dropoffPostalCode := strings.TrimSpace(trip.DropoffPostalCode)
 
-	return tripID != "" && passengerID != "" && driverID != "" && pickupPostalCode != "" && dropoffPostalCode != ""
+	return tripID != "" && passengerID != "" && pickupPostalCode != "" && dropoffPostalCode != ""
 }
 
 // func setupCorsResponse(res *http.ResponseWriter, req *http.Request) {

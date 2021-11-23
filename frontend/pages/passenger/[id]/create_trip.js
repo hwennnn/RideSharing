@@ -1,12 +1,15 @@
-import { getStaticPathForPassengers } from '../../../utils/passenger-utils';
+import { createTripAsPassenger, getStaticPathForPassengers } from '../../../utils/passenger-utils';
 import Head from 'next/head'
 import styles from '../../../styles/Home.module.css'
+import React, { useState } from 'react'
+import { Button, Input, Form } from 'semantic-ui-react'
+import Router from 'next/router';
 
 export async function getStaticProps({ params }) {
-    const passengerID = params.id
+    const passenger_id = params.id
     return {
         props: {
-            passengerID
+            passenger_id
         }
     }
 }
@@ -20,7 +23,23 @@ export async function getStaticPaths() {
     }
 }
 
-export default function DriverHome({ passenger_id }) {
+export default function CreateTrip({ passenger_id }) {
+    const [pickupPostalCode, setPickupPostalCode] = useState("")
+    const [droppffPostalCode, setDropoffPostalCode] = useState("")
+
+    async function createTrip() {
+        if (pickupPostalCode != "" && droppffPostalCode != "") {
+            console.log(pickupPostalCode, droppffPostalCode)
+            let response = await createTripAsPassenger(passenger_id, pickupPostalCode, droppffPostalCode)
+
+            if (response.status == 201) {
+                Router.push(`/passenger/${passenger_id}`)
+            } else {
+                alert(response.data)
+            }
+
+        }
+    }
 
     return (
         <div className={styles.container}>
@@ -34,6 +53,22 @@ export default function DriverHome({ passenger_id }) {
                 Create Trip
             </h1>
 
+            <br />
+
+            <Form>
+                <Form.Group widths='equal'>
+                    <Form.Field>
+                        <label>Pickup Postal Code</label>
+                        <Input value={pickupPostalCode} onChange={e => setPickupPostalCode(e.target.value)} maxLength="10" fluid placeholder='Pickup Postal Code' />
+                    </Form.Field>
+                    <Form.Field>
+                        <label>Dropoff Postal Code</label>
+                        <Input value={droppffPostalCode} onChange={e => setDropoffPostalCode(e.target.value)} maxLength="10" fluid placeholder='Dropoff Postal Code' />
+                    </Form.Field>
+                </Form.Group>
+
+                <Button onClick={createTrip} type='submit'>Submit</Button>
+            </Form>
 
         </div>
     )
