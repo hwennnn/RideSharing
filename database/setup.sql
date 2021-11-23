@@ -9,6 +9,7 @@ CREATE TABLE Passengers
     LastName VARCHAR(30) NOT NULL,
     MobileNumber VARCHAR(15) NOT NULL,
     EmailAddress VARCHAR(30) NOT NUll,
+    AvailableStatus TINYINT(1) NOT NULL,
     CONSTRAINT PK_Passenger PRIMARY KEY (PassengerID)
 );
 
@@ -41,9 +42,9 @@ CREATE TABLE Trips
 );
 
 -- Insert Passenger Data
-INSERT INTO Passengers (PassengerID, FirstName, LastName, MobileNumber, EmailAddress) VALUES ('1', 'Hou Man', 'Wai', '6598754815', 'hwendev@gmail.com');
-INSERT INTO Passengers (PassengerID, FirstName, LastName, MobileNumber, EmailAddress) VALUES ('2' ,'Rui Quan', 'Zachary Hong', '6512345678', 'zachary@gmail.com');
-INSERT INTO Passengers (PassengerID, FirstName, LastName, MobileNumber, EmailAddress) VALUES ('3', 'Yong Teng', 'Tee', '6511111111', 'teeyongteng@gmail.com');
+INSERT INTO Passengers (PassengerID, FirstName, LastName, MobileNumber, EmailAddress, AvailableStatus) VALUES ('1', 'Hou Man', 'Wai', '6598754815', 'hwendev@gmail.com', 1);
+INSERT INTO Passengers (PassengerID, FirstName, LastName, MobileNumber, EmailAddress, AvailableStatus) VALUES ('2' ,'Rui Quan', 'Zachary Hong', '6512345678', 'zachary@gmail.com', 1);
+INSERT INTO Passengers (PassengerID, FirstName, LastName, MobileNumber, EmailAddress, AvailableStatus) VALUES ('3', 'Yong Teng', 'Tee', '6511111111', 'teeyongteng@gmail.com', 1);
 
 -- Insert Driver Data
 INSERT INTO Drivers (DriverID, FirstName, LastName, MobileNumber, EmailAddress, IdentificationNumber, CarLicenseNumber, AvailableStatus) VALUES ('1', 'Run Lin', 'Xiong', '6522222222', 'runlin@gmail.com', 'T12345678A', 'h124j451k32jj123f', 0);

@@ -27,15 +27,19 @@ type Driver struct {
 	AvailableStatus      int    `json:"available_status"`
 	// 0 -> used by golang to indicate whether the integer variable has been initialised or not
 	// 1 => Online and available
-	// 2 => Online and during the trip
+	// 2 => Online but during the trip
 }
 
 type Passenger struct {
-	PassengerID  string `json:"passenger_id"`
-	FirstName    string `json:"first_name"`
-	LastName     string `json:"last_name"`
-	MobileNumber string `json:"mobile_number"`
-	EmailAddress string `json:"email_address"`
+	PassengerID     string `json:"passenger_id"`
+	FirstName       string `json:"first_name"`
+	LastName        string `json:"last_name"`
+	MobileNumber    string `json:"mobile_number"`
+	EmailAddress    string `json:"email_address"`
+	AvailableStatus int    `json:"available_status"`
+	// 0 -> used by golang to indicate whether the integer variable has been initialised or not
+	// 1 => Online and available
+	// 2 => Online but during the trip
 }
 
 type Trip struct {
@@ -126,7 +130,7 @@ func passengers(res http.ResponseWriter, req *http.Request) {
 	for databaseResults.Next() {
 		// map this type to the record in the table
 		var passenger Passenger
-		err = databaseResults.Scan(&passenger.PassengerID, &passenger.FirstName, &passenger.LastName, &passenger.MobileNumber, &passenger.EmailAddress)
+		err = databaseResults.Scan(&passenger.PassengerID, &passenger.FirstName, &passenger.LastName, &passenger.MobileNumber, &passenger.EmailAddress, &passenger.AvailableStatus)
 		if err != nil {
 			panic(err.Error())
 		}
@@ -361,7 +365,7 @@ func passenger(res http.ResponseWriter, req *http.Request) {
 		var isExist bool
 		var passenger Passenger
 		for databaseResults.Next() {
-			err = databaseResults.Scan(&passenger.PassengerID, &passenger.FirstName, &passenger.LastName, &passenger.MobileNumber, &passenger.EmailAddress)
+			err = databaseResults.Scan(&passenger.PassengerID, &passenger.FirstName, &passenger.LastName, &passenger.MobileNumber, &passenger.EmailAddress, &passenger.AvailableStatus)
 			if err != nil {
 				panic(err.Error())
 			}
@@ -418,7 +422,7 @@ func passenger(res http.ResponseWriter, req *http.Request) {
 				}
 
 				if !isPassengerExist {
-					query := fmt.Sprintf("INSERT INTO Passengers VALUES ('%s', '%s', '%s', '%s', '%s')", newPassenger.PassengerID, newPassenger.FirstName, newPassenger.LastName, newPassenger.MobileNumber, newPassenger.EmailAddress)
+					query := fmt.Sprintf("INSERT INTO Passengers VALUES ('%s', '%s', '%s', '%s', '%s', '%d')", newPassenger.PassengerID, newPassenger.FirstName, newPassenger.LastName, newPassenger.MobileNumber, newPassenger.EmailAddress, 1)
 
 					_, err := db.Query(query)
 
@@ -476,7 +480,7 @@ func passenger(res http.ResponseWriter, req *http.Request) {
 					return
 				}
 
-				query := fmt.Sprintf("INSERT INTO Passengers VALUES ('%s', '%s', '%s', '%s', '%s')", newPassenger.PassengerID, newPassenger.FirstName, newPassenger.LastName, newPassenger.MobileNumber, newPassenger.EmailAddress)
+				query := fmt.Sprintf("INSERT INTO Passengers VALUES ('%s', '%s', '%s', '%s', '%s', '%d')", newPassenger.PassengerID, newPassenger.FirstName, newPassenger.LastName, newPassenger.MobileNumber, newPassenger.EmailAddress, 1)
 
 				_, err := db.Query(query)
 
@@ -531,6 +535,10 @@ func formmatedUpdatePassengerQueryField(newPassenger Passenger) string {
 
 	if newPassenger.EmailAddress != "" {
 		fields = append(fields, fmt.Sprintf("EmailAddress='%s'", newPassenger.EmailAddress))
+	}
+
+	if newPassenger.AvailableStatus != 0 {
+		fields = append(fields, fmt.Sprintf("AvailableStatus='%d'", newPassenger.AvailableStatus))
 	}
 
 	return strings.Join(fields, ", ")
