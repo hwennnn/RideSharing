@@ -1,9 +1,9 @@
 import axios from 'axios';
 import { uuid } from 'uuidv4';
-import baseUrl from './baseUrl';
+import { baseUrl, requestConfig } from './globals';
 
 export async function getStaticPathForPassengers() {
-    const response = await axios.get(`${baseUrl}/passengers/`);
+    const response = await axios.get(`${baseUrl}/passengers/`, requestConfig);
 
     return response.data.map((passenger) => {
         return {
@@ -15,13 +15,13 @@ export async function getStaticPathForPassengers() {
 }
 
 export async function getPassenger(passengerID) {
-    const response = await axios.get(`${baseUrl}/passengers/${passengerID}`)
+    const response = await axios.get(`${baseUrl}/passengers/${passengerID}`, requestConfig)
 
     return response.data
 }
 
 export async function retrieveCompletedTripsForPassenger(passengerID) {
-    const response = await axios.get(`${baseUrl}/trips?passenger_id=${passengerID}&trip_progress=3`)
+    const response = await axios.get(`${baseUrl}/trips?passenger_id=${passengerID}&trip_progress=3`, requestConfig)
 
     return response.data
 }
@@ -36,7 +36,7 @@ export async function createTripAsPassenger(passengerID, pickupPostalCode, dropo
         "dropoff_postal_code": dropoffPostalCode
     }
 
-    const response = await axios.post(`${baseUrl}/trips/${trip_id}`, body)
+    const response = await axios.post(`${baseUrl}/trips/${trip_id}`, body, requestConfig)
 
     return response
 }

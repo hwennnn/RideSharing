@@ -79,7 +79,7 @@ export default function EndTrip({ trip }) {
                         <Table.Cell>{trip.pickup_postal_code}</Table.Cell>
                         <Table.Cell>{trip.dropoff_postal_code}</Table.Cell>
                         <Table.Cell>{formatDateStringFromMs(trip.created_time)}</Table.Cell>
-                        <Table.Cell>{formatDateStringFromMs(trip.completed_time)}</Table.Cell>
+                        <Table.Cell>{trip.completed_time == 0 ? "Nil" : formatDateStringFromMs(trip.completed_time)}</Table.Cell>
                         <Table.Cell><Button onClick={() => endTrip()} >End Trip</Button></Table.Cell>
                     </Table.Row>
                 </Table.Body>

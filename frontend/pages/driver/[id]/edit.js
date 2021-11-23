@@ -5,7 +5,7 @@ import styles from '../../../styles/Home.module.css'
 import Head from 'next/head'
 import Router from 'next/router';
 import axios from 'axios';
-import baseUrl from '../../../utils/baseUrl';
+import { baseUrl, requestConfig } from '../../../utils/globals';
 
 
 export async function getStaticProps({ params }) {
@@ -45,7 +45,7 @@ export default function EditDriver({ driver_id, first_name, last_name, mobile_nu
                 "car_license_number": carLicenseNumber
             }
             try {
-                let response = await axios.put(`${baseUrl}/drivers/${driver_id}`, body);
+                let response = await axios.put(`${baseUrl}/drivers/${driver_id}`, body, requestConfig);
 
                 if (response.status == 202) {
                     console.log(response.data)

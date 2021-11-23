@@ -38,7 +38,7 @@ export default function ViewTrips({ driverID, trips }) {
                 <Table.Cell>{trip.pickup_postal_code}</Table.Cell>
                 <Table.Cell>{trip.dropoff_postal_code}</Table.Cell>
                 <Table.Cell>{formatDateStringFromMs(trip.created_time)}</Table.Cell>
-                <Table.Cell>{formatDateStringFromMs(trip.completed_time)}</Table.Cell>
+                <Table.Cell>{trip.completed_time == 0 ? "Nil" : formatDateStringFromMs(trip.completed_time)}</Table.Cell>
                 <Table.Cell><Button onClick={() => initiateTrip(trip.trip_id)} >Initiate</Button></Table.Cell>
             </Table.Row>
         )

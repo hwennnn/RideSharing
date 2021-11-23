@@ -5,7 +5,8 @@ import styles from '../../../styles/Home.module.css'
 import Head from 'next/head'
 import Router from 'next/router';
 import axios from 'axios';
-import baseUrl from '../../../utils/baseUrl';
+import { baseUrl, requestConfig } from '../../../utils/globals';
+
 
 export async function getStaticProps({ params }) {
     const passengerID = params.id
@@ -45,7 +46,7 @@ export default function EditPassenger({ passenger_id, first_name, last_name, mob
             }
             console.log(body)
             try {
-                let response = await axios.put(`${baseUrl}/passengers/${passenger_id}`, body);
+                let response = await axios.put(`${baseUrl}/passengers/${passenger_id}`, body, requestConfig);
                 if (response.status == 202) {
                     console.log(response.data)
                     Router.push(`/passenger/${passenger_id}`)

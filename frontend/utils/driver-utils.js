@@ -1,9 +1,8 @@
 import axios from 'axios';
-import baseUrl from './baseUrl';
-import { retrieveCompletedTripsForPassenger } from './passenger-utils';
+import { baseUrl, requestConfig } from './globals';
 
 export async function getStaticPathForDrivers() {
-    const response = await axios.get(`${baseUrl}/drivers/`);
+    const response = await axios.get(`${baseUrl}/drivers/`, requestConfig);
 
     return response.data.map((driver) => {
         return {
@@ -15,19 +14,19 @@ export async function getStaticPathForDrivers() {
 }
 
 export async function getDriver(driverID) {
-    const response = await axios.get(`${baseUrl}/drivers/${driverID}`)
+    const response = await axios.get(`${baseUrl}/drivers/${driverID}`, requestConfig)
 
     return response.data
 }
 
 export async function retrieveCompletedTripsForDriver(driverID) {
-    const response = await axios.get(`${baseUrl}/trips?driver_id=${driverID}&trip_progress=3`)
+    const response = await axios.get(`${baseUrl}/trips?driver_id=${driverID}&trip_progress=3`, requestConfig)
 
     return response.data
 }
 
 export async function retrieveAvailableTripsForDriver() {
-    const response = await axios.get(`${baseUrl}/trips?trip_progress=1`)
+    const response = await axios.get(`${baseUrl}/trips?trip_progress=1`, requestConfig)
 
     return response.data
 }
@@ -39,13 +38,13 @@ export async function initiateTripAsDriver(trip_id, driver_id) {
         "trip_progress": 2
     }
 
-    const response = await axios.put(`${baseUrl}/trips/${trip_id}`, body)
+    const response = await axios.put(`${baseUrl}/trips/${trip_id}`, body, requestConfig)
 
     return response
 }
 
 export async function retrieveOngoingTripForDriver(driverID) {
-    const response = await axios.get(`${baseUrl}/trips?driver_id=${driverID}&trip_progress=2`)
+    const response = await axios.get(`${baseUrl}/trips?driver_id=${driverID}&trip_progress=2`, requestConfig)
 
     return (response.data)[0]
 }
@@ -56,7 +55,7 @@ export async function endTripAsDriver(trip_id) {
         "trip_progress": 3
     }
 
-    const response = await axios.put(`${baseUrl}/trips/${trip_id}`, body)
+    const response = await axios.put(`${baseUrl}/trips/${trip_id}`, body, requestConfig)
 
     return response
 }
