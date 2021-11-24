@@ -4,13 +4,22 @@ import express from 'express';
 const driverRouter = express.Router();
 
 driverRouter.get("/", function (req, res) {
-    console.log(`${driverEndpointBaseURL}`)
-    res.redirect(`${driverEndpointBaseURL}`)
+    res.redirect(`${driverEndpointBaseURL}/`)
 });
 
-driverRouter.get("/{driverID}", function (req, res) {
-    driverID = req.params['driverID']
-    res.redirect(`${driverEndpointBaseURL}/${driverID}`)
+driverRouter.get("/:driverID", function (req, res) {
+    let driverID = req.params.driverID
+    res.redirect(307, `${driverEndpointBaseURL}/${driverID}`)
+});
+
+driverRouter.post("/:driverID", function (req, res) {
+    let driverID = req.params.driverID
+    res.redirect(307, `${driverEndpointBaseURL}/${driverID}`)
+});
+
+driverRouter.put("/:driverID", function (req, res) {
+    let driverID = req.params.driverID
+    res.redirect(307, `${driverEndpointBaseURL}/${driverID}`)
 });
 
 export default driverRouter;
