@@ -1,0 +1,1 @@
+export const driverEndpointBaseURL = 'http://localhost:8080/api/v1/drivers/'
