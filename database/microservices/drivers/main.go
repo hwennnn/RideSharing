@@ -31,21 +31,10 @@ type Driver struct {
 
 var db *sql.DB
 
-const authenticationToken = "1467a2a8-fff7-45b5-986d-679382d0707a"
-
 func middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		// Authenticate requests by token
-		reqToken := req.Header.Get("Authorization")
-		splitToken := strings.Split(reqToken, "Bearer ")
-
-		if len(splitToken) >= 2 && splitToken[1] == authenticationToken {
-			// if the token is valid
-			res.Header().Set("Content-Type", "application/json")
-			next.ServeHTTP(res, req)
-		} else {
-			http.Error(res, "Access Forbidden", http.StatusForbidden)
-		}
+		res.Header().Set("Content-Type", "application/json")
+		next.ServeHTTP(res, req)
 	})
 }
 
