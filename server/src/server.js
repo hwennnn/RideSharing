@@ -2,6 +2,7 @@ import express from 'express';
 import cors from "cors"
 import helmet from "helmet"
 import driversRouter from './routers/drivers-router';
+import passengerRouter from './routers/passenger-router';
 
 const PORT = 5000;
 const app = express();
@@ -15,6 +16,7 @@ app.get('/api/v1', function (req, res) {
 })
 
 app.use('/api/v1/drivers', driversRouter)
+app.use('/api/v1/passengers', passengerRouter)
 
 
 app.listen(PORT, async () => {
