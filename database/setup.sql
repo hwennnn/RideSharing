@@ -37,8 +37,6 @@ CREATE TABLE Trips
     CreatedTime BIGINT NOT NULL,
     CompletedTime BIGINT NULL,
     CONSTRAINT PK_Trip PRIMARY KEY (TripID),
-    CONSTRAINT FK_Trip_Passenger FOREIGN KEY (PassengerID) REFERENCES Passengers(PassengerID),
-    CONSTRAINT FK_Trip_Driver FOREIGN KEY (DriverID) REFERENCES Drivers(DriverID)
 );
 
 -- Insert Passenger Data
