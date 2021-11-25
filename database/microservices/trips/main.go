@@ -56,9 +56,10 @@ type Trip struct {
 	Passenger         Passenger `json:"passenger"`
 	Driver            Driver    `json:"driver"`
 	// 0 -> used by golang to indicate whether the integer variable has been initialised or not
-	// 1 -> Created by passenger, but no driver is assigned yet
-	// 2 -> The trip is ongoing
-	// 3 -> The trip has ended
+	// 1 -> Created by passenger, but no driver is found to be assgined
+	// 2 -> A driver was already assigned for the trip, but the driver has not inititated the trip yet
+	// 3 -> The trip is ongoing (Driver has initiated the trip)
+	// 4 -> The trip has ended (Driver has ended the trip)
 }
 
 var db *sql.DB
