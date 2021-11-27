@@ -13,7 +13,7 @@ app.use(helmet()); //safety
 app.use(cors()); //safety
 app.use(express.json()); //receive do respond with request
 
-app.use(tokenAuthentication)
+// app.use(tokenAuthentication)
 
 app.use('/api/v1/drivers', driversRouter)
 app.use('/api/v1/passengers', passengerRouter)

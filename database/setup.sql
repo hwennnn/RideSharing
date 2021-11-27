@@ -36,7 +36,7 @@ CREATE TABLE Trips
     TripProgress TINYINT(1) NOT NULL,
     CreatedTime BIGINT NOT NULL,
     CompletedTime BIGINT NULL,
-    CONSTRAINT PK_Trip PRIMARY KEY (TripID),
+    CONSTRAINT PK_Trip PRIMARY KEY (TripID)
 );
 
 -- Insert Passenger Data

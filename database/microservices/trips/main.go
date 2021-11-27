@@ -80,36 +80,71 @@ type TripsRequestBody struct {
 	DriverID    string `json:"driver_id"`
 }
 
+func fetchDriver(url string) Driver {
+	var result Driver
+
+	if resp, err := http.Get(url); err == nil {
+		defer resp.Body.Close()
+		if body, err := ioutil.ReadAll(resp.Body); err == nil {
+			json.Unmarshal(body, &result)
+		} else {
+			log.Fatal(err)
+		}
+	} else {
+		log.Fatal(err)
+	}
+
+	return result
+}
+
+func fetchPassenger(url string) Passenger {
+	var result Passenger
+
+	if resp, err := http.Get(url); err == nil {
+		defer resp.Body.Close()
+		if body, err := ioutil.ReadAll(resp.Body); err == nil {
+			json.Unmarshal(body, &result)
+		} else {
+			log.Fatal(err)
+		}
+	} else {
+		log.Fatal(err)
+	}
+
+	return result
+}
+
 func trips(res http.ResponseWriter, req *http.Request) {
 	var results []Trip
 
 	params := req.URL.Query()
 
-	// convert JSON to object
+	query := "SELECT * FROM Trips"
 	formmatedFieldQuery := formmatedTripQueryField(params["driver_id"], params["passenger_id"], params["trip_progress"])
-	innerJoinQuery := "INNER JOIN Passengers p ON t.PassengerID = p.PassengerID"
-	if len(params["driver_id"]) > 0 || (len(params["trip_progress"]) > 0 && params["trip_progress"][0] == "3") {
-		innerJoinQuery += " INNER JOIN Drivers d ON t.DriverID = d.DriverID"
+	if formmatedFieldQuery != "" {
+		query = fmt.Sprintf("SELECT * FROM Trips WHERE %s", formmatedFieldQuery)
 	}
-	query := fmt.Sprintf("SELECT * FROM Trips t %s WHERE %s", innerJoinQuery, formmatedFieldQuery)
-	fmt.Println(query)
 	databaseResults, err := db.Query(query)
 
-	// [TripID PassengerID DriverID PickupPostalCode DropoffPostalCode TripProgress DriverID FirstName LastName MobileNumber EmailAddress IdentificationNumber CarLicenseNumber AvailableStatus PassengerID FirstName LastName MobileNumber EmailAddress]
 	if err != nil {
 		panic(err.Error())
 	}
 
 	for databaseResults.Next() {
 		var trip Trip
-		if len(params["driver_id"]) > 0 || (len(params["trip_progress"]) > 0 && params["trip_progress"][0] == "3") {
-			err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.DriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.CreatedTime, &trip.CompletedTime, &trip.Passenger.PassengerID, &trip.Passenger.FirstName, &trip.Passenger.LastName, &trip.Passenger.MobileNumber, &trip.Passenger.EmailAddress, &trip.Passenger.AvailableStatus, &trip.Driver.DriverID, &trip.Driver.FirstName, &trip.Driver.LastName, &trip.Driver.MobileNumber, &trip.Driver.EmailAddress, &trip.Driver.IdentificationNumber, &trip.Driver.CarLicenseNumber, &trip.Driver.AvailableStatus)
-		} else {
-			err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.sqlDriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.CreatedTime, &trip.CompletedTime, &trip.Passenger.PassengerID, &trip.Passenger.FirstName, &trip.Passenger.LastName, &trip.Passenger.MobileNumber, &trip.Passenger.EmailAddress, &trip.Passenger.AvailableStatus)
-			if trip.sqlDriverID.Valid {
-				trip.DriverID = trip.sqlDriverID.String
-			}
+		err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.sqlDriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.CreatedTime, &trip.CompletedTime)
+		if trip.sqlDriverID.Valid {
+			trip.DriverID = trip.sqlDriverID.String
 		}
+
+		if trip.DriverID != "" {
+			trip.Driver = fetchDriver(fmt.Sprintf("http://localhost:5000/api/v1/drivers/%s", trip.DriverID))
+		}
+
+		if trip.PassengerID != "" {
+			trip.Passenger = fetchPassenger(fmt.Sprintf("http://localhost:5000/api/v1/passengers/%s", trip.PassengerID))
+		}
+
 		if err != nil {
 			panic(err.Error())
 		}
@@ -125,7 +160,7 @@ func formmatedTripQueryField(driverID []string, passengerID []string, tripProgre
 	fmt.Println(driverID, passengerID)
 
 	if len(driverID) > 0 && driverID[0] != "" {
-		results += fmt.Sprintf("t.DriverID = '%s'", driverID[0])
+		results += fmt.Sprintf("DriverID = '%s'", driverID[0])
 	}
 
 	if len(passengerID) > 0 && passengerID[0] != "" {
@@ -133,7 +168,7 @@ func formmatedTripQueryField(driverID []string, passengerID []string, tripProgre
 			results += " AND "
 		}
 
-		results += fmt.Sprintf("t.PassengerID = '%s'", passengerID[0])
+		results += fmt.Sprintf("PassengerID = '%s'", passengerID[0])
 	}
 
 	if len(tripProgress) > 0 && tripProgress[0] != "" {
@@ -142,7 +177,7 @@ func formmatedTripQueryField(driverID []string, passengerID []string, tripProgre
 		}
 		parsedTripProgress, _ := strconv.ParseInt(tripProgress[0], 10, 64)
 
-		results += fmt.Sprintf("t.TripProgress = %d", parsedTripProgress)
+		results += fmt.Sprintf("TripProgress = %d", parsedTripProgress)
 	}
 
 	return results
