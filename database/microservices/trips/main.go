@@ -122,7 +122,7 @@ func trips(res http.ResponseWriter, req *http.Request) {
 	query := "SELECT * FROM Trips"
 	formmatedFieldQuery := formmatedTripQueryField(params["driver_id"], params["passenger_id"], params["trip_progress"])
 	if formmatedFieldQuery != "" {
-		query = fmt.Sprintf("SELECT * FROM Trips WHERE %s", formmatedFieldQuery)
+		query = fmt.Sprintf("SELECT * FROM Trips WHERE %s ORDER BY CompletedTime DESC", formmatedFieldQuery)
 	}
 	databaseResults, err := db.Query(query)
 
