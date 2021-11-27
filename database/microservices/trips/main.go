@@ -188,7 +188,7 @@ func trip(res http.ResponseWriter, req *http.Request) {
 	tripid := params["tripid"]
 
 	if req.Method == "GET" {
-		query := fmt.Sprintf("SELECT * FROM Trips t INNER JOIN Drivers d ON t.DriverID = d.DriverID INNER JOIN Passengers p ON t.PassengerID = p.PassengerID WHERE TripID='%s'", tripid)
+		query := fmt.Sprintf("SELECT * FROM Trips WHERE TripID='%s'", tripid)
 		databaseResults, err := db.Query(query)
 		if err != nil {
 			panic(err.Error())
@@ -197,7 +197,20 @@ func trip(res http.ResponseWriter, req *http.Request) {
 		var isExist bool
 		var trip Trip
 		for databaseResults.Next() {
-			err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.DriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.CreatedTime, &trip.CompletedTime, &trip.Driver.DriverID, &trip.Driver.FirstName, &trip.Driver.LastName, &trip.Driver.MobileNumber, &trip.Driver.EmailAddress, &trip.Driver.IdentificationNumber, &trip.Driver.CarLicenseNumber, &trip.Driver.AvailableStatus, &trip.Passenger.PassengerID, &trip.Passenger.FirstName, &trip.Passenger.LastName, &trip.Passenger.MobileNumber, &trip.Passenger.EmailAddress, &trip.Passenger.AvailableStatus)
+			err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.sqlDriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.CreatedTime, &trip.CompletedTime)
+
+			if trip.sqlDriverID.Valid {
+				trip.DriverID = trip.sqlDriverID.String
+			}
+
+			if trip.DriverID != "" {
+				trip.Driver = fetchDriver(fmt.Sprintf("http://localhost:5000/api/v1/drivers/%s", trip.DriverID))
+			}
+
+			if trip.PassengerID != "" {
+				trip.Passenger = fetchPassenger(fmt.Sprintf("http://localhost:5000/api/v1/passengers/%s", trip.PassengerID))
+			}
+
 			if err != nil {
 				panic(err.Error())
 			}
