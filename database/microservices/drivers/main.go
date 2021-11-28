@@ -40,7 +40,13 @@ func middleware(next http.Handler) http.Handler {
 
 func drivers(res http.ResponseWriter, req *http.Request) {
 	var results []Driver
-	databaseResults, err := db.Query("Select * FROM Drivers")
+
+	params := req.URL.Query()
+
+	formmatedFieldQuery := formattedDriverQueryField(params["available_status"])
+	query := fmt.Sprintf("SELECT * FROM Drivers %s", formmatedFieldQuery)
+	fmt.Println(query)
+	databaseResults, err := db.Query(query)
 
 	if err != nil {
 		panic(err.Error())
@@ -58,6 +64,20 @@ func drivers(res http.ResponseWriter, req *http.Request) {
 	}
 	// returns all the courses in JSON
 	json.NewEncoder(res).Encode(results)
+}
+
+func formattedDriverQueryField(availableStatus []string) string {
+	results := "WHERE "
+
+	if len(availableStatus) > 0 && availableStatus[0] != "" {
+		results += fmt.Sprintf("AvailableStatus = '%s'", availableStatus[0])
+	}
+
+	if results == "WHERE " {
+		return ""
+	}
+
+	return results
 }
 
 func driver(res http.ResponseWriter, req *http.Request) {
@@ -278,7 +298,7 @@ func main() {
 
 	router := mux.NewRouter()
 	router.Use(middleware)
-	router.HandleFunc("/api/v1/drivers/", drivers).Methods("GET")
+	router.HandleFunc("/api/v1/drivers", drivers).Methods("GET")
 	router.HandleFunc("/api/v1/drivers/{driverid}", driver).Methods("GET", "PUT", "POST")
 
 	handler := cors.AllowAll().Handler(router)

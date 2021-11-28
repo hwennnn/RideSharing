@@ -119,11 +119,8 @@ func trips(res http.ResponseWriter, req *http.Request) {
 
 	params := req.URL.Query()
 
-	query := "SELECT * FROM Trips"
 	formmatedFieldQuery := formmatedTripQueryField(params["driver_id"], params["passenger_id"], params["trip_progress"])
-	if formmatedFieldQuery != "" {
-		query = fmt.Sprintf("SELECT * FROM Trips WHERE %s ORDER BY CompletedTime DESC", formmatedFieldQuery)
-	}
+	query := fmt.Sprintf("SELECT * FROM Trips %s ORDER BY CompletedTime DESC", formmatedFieldQuery)
 	databaseResults, err := db.Query(query)
 
 	if err != nil {
@@ -156,8 +153,7 @@ func trips(res http.ResponseWriter, req *http.Request) {
 }
 
 func formmatedTripQueryField(driverID []string, passengerID []string, tripProgress []string) string {
-	var results string
-	fmt.Println(driverID, passengerID)
+	results := "WHERE "
 
 	if len(driverID) > 0 && driverID[0] != "" {
 		results += fmt.Sprintf("DriverID = '%s'", driverID[0])
@@ -178,6 +174,10 @@ func formmatedTripQueryField(driverID []string, passengerID []string, tripProgre
 		parsedTripProgress, _ := strconv.ParseInt(tripProgress[0], 10, 64)
 
 		results += fmt.Sprintf("TripProgress = %d", parsedTripProgress)
+	}
+
+	if results == "WHERE " {
+		return ""
 	}
 
 	return results
@@ -230,7 +230,6 @@ func trip(res http.ResponseWriter, req *http.Request) {
 
 		// POST is for creating new driver
 		if req.Method == "POST" {
-
 			// read the string sent to the service
 			var newTrip Trip
 			reqBody, err := ioutil.ReadAll(req.Body)
@@ -251,42 +250,13 @@ func trip(res http.ResponseWriter, req *http.Request) {
 					return
 				}
 
-				// check if driver exists; add only if driver does not exist
-				query := fmt.Sprintf("SELECT * FROM Trips WHERE TripID='%s'", tripid)
-				databaseResults, err := db.Query(query)
-				if err != nil {
-					panic(err.Error())
-				}
+				createTrip(newTrip, res, req)
 
-				var isTripExist bool
-				for databaseResults.Next() {
-					if err != nil {
-						panic(err.Error())
-					}
-					isTripExist = true
-				}
-
-				if !isTripExist {
-					query := fmt.Sprintf("INSERT INTO Trips VALUES ('%s', '%s', NULL, '%s', '%s', '%d', '%d', '%d')", newTrip.TripID, newTrip.PassengerID, newTrip.PickupPostalCode, newTrip.DropoffPostalCode, 1, currentMs(), 0)
-
-					_, err := db.Query(query)
-
-					if err != nil {
-						panic(err.Error())
-					}
-
-					updatePassengerAvailableStatus(2, newTrip.PassengerID)
-
-					res.WriteHeader(http.StatusCreated)
-					res.Write([]byte("201 - Trip added: " + tripid))
-				} else {
-					res.WriteHeader(http.StatusConflict)
-					res.Write([]byte("409 - Duplicate trip ID"))
-				}
 			} else {
 				res.WriteHeader(http.StatusUnprocessableEntity)
 				res.Write([]byte("422 - Please supply trip information in JSON format"))
 			}
+
 		}
 	}
 
@@ -375,6 +345,49 @@ func trip(res http.ResponseWriter, req *http.Request) {
 			res.WriteHeader(http.StatusUnprocessableEntity)
 			res.Write([]byte("422 - Please supply trip information in JSON format"))
 		}
+	}
+}
+
+// check if trip exists by tripid
+func isTripExist(tripid string) bool {
+	exist := false
+	query := fmt.Sprintf("SELECT * FROM Trips WHERE TripID='%s'", tripid)
+	databaseResults, err := db.Query(query)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	for databaseResults.Next() {
+		if err != nil {
+			panic(err.Error())
+		}
+		exist = true
+	}
+
+	return exist
+}
+
+func createTrip(newTrip Trip, res http.ResponseWriter, req *http.Request) {
+
+	exist := isTripExist(newTrip.TripID)
+
+	if exist {
+		res.WriteHeader(http.StatusConflict)
+		res.Write([]byte("409 - Duplicate trip ID"))
+	} else {
+		query := fmt.Sprintf("INSERT INTO Trips VALUES ('%s', '%s', NULL, '%s', '%s', '%d', '%d', '%d')", newTrip.TripID, newTrip.PassengerID, newTrip.PickupPostalCode, newTrip.DropoffPostalCode, 1, currentMs(), 0)
+
+		_, err := db.Query(query)
+
+		if err != nil {
+			panic(err.Error())
+		}
+
+		updatePassengerAvailableStatus(2, newTrip.PassengerID)
+
+		res.WriteHeader(http.StatusCreated)
+		res.Write([]byte("201 - Trip added: " + newTrip.TripID))
 	}
 }
 

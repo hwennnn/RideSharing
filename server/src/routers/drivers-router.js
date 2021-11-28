@@ -1,10 +1,14 @@
 import { driverEndpointBaseURL } from '../config/baseURL';
 import express from 'express';
+const url = require('url');
 
 const driverRouter = express.Router();
 
 driverRouter.get("/", function (req, res) {
-    res.redirect(`${driverEndpointBaseURL}/`)
+    res.redirect(url.format({
+        pathname: `${driverEndpointBaseURL}`,
+        query: req.query,
+    }))
 });
 
 driverRouter.get("/:driverID", function (req, res) {
