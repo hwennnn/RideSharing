@@ -3,14 +3,20 @@ import { Input, Button } from 'semantic-ui-react'
 import Head from 'next/head'
 import Router from 'next/router';
 import styles from '../../styles/Home.module.css'
+import { isDriverExist } from '../../utils/driver-utils';
 
 
 export default function LoginDriver() {
     const [driverID, setDriverID] = useState(''); // '' is the initial state value
 
-    function loginAsDriver() {
+    async function loginAsDriver() {
         if (driverID != '') {
-            Router.push(`/driver/${driverID}`)
+            let exist = await isDriverExist(driverID);
+            if (exist) {
+                Router.push(`/driver/${driverID}`)
+            } else {
+                alert("Incorrect driver credential information to login!")
+            }
         }
     }
 

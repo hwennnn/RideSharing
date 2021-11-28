@@ -14,6 +14,17 @@ export async function getStaticPathForPassengers() {
     })
 }
 
+export async function isPassengerExist(passengerID) {
+    try {
+        const response = await axios.get(`${baseUrl}/passengers/${passengerID}`, requestConfig)
+        console.log(response.status)
+    } catch (err) {
+        return false
+    }
+
+    return true
+}
+
 export async function getPassenger(passengerID) {
     const response = await axios.get(`${baseUrl}/passengers/${passengerID}`, requestConfig)
 

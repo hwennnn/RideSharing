@@ -13,6 +13,17 @@ export async function getStaticPathForDrivers() {
     })
 }
 
+export async function isDriverExist(driverID) {
+    try {
+        const response = await axios.get(`${baseUrl}/drivers/${driverID}`, requestConfig)
+        console.log(response.status)
+    } catch (err) {
+        return false
+    }
+
+    return true
+}
+
 export async function getDriver(driverID) {
     const response = await axios.get(`${baseUrl}/drivers/${driverID}`, requestConfig)
 

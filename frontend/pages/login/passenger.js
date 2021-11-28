@@ -3,14 +3,20 @@ import { Input, Button } from 'semantic-ui-react'
 import Head from 'next/head'
 import Router from 'next/router';
 import styles from '../../styles/Home.module.css'
+import { isPassengerExist } from '../../utils/passenger-utils';
 
 
 export default function LoginPassenger() {
     const [passengerID, setPassengerID] = useState(''); // '' is the initial state value
 
-    function loginAsPassenger() {
+    async function loginAsPassenger() {
         if (passengerID != '') {
-            Router.push(`/passenger/${passengerID}`)
+            let exist = await isPassengerExist(passengerID);
+            if (exist) {
+                Router.push(`/passenger/${passengerID}`)
+            } else {
+                alert("Incorrect passenger credential information to login!")
+            }
         }
     }
 
