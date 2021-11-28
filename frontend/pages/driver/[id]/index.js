@@ -43,6 +43,12 @@ export default function DriverHome({ driver_id, last_name, first_name, available
 
                 {available_status == 2 &&
                     <p className={styles.description}>
+                        You have been <span className={styles.blueColor}>assigned</span> a trip by the system
+                    </p>
+                }
+
+                {available_status == 3 &&
+                    <p className={styles.description}>
                         You are currently in an <span className={styles.blueColor}>ongoing</span> trip
                     </p>
                 }
@@ -50,7 +56,7 @@ export default function DriverHome({ driver_id, last_name, first_name, available
                 <br />
 
                 <div className={styles.grid}>
-                    {available_status == 1 &&
+                    {available_status == 2 &&
                         <Link href={initiateTrip}>
                             <a className={styles.card}>
                                 <h2>Initiate Trip &rarr;</h2>
@@ -59,7 +65,7 @@ export default function DriverHome({ driver_id, last_name, first_name, available
                         </Link>
                     }
 
-                    {available_status == 2 &&
+                    {available_status == 3 &&
                         <Link href={endTrip}>
                             <a className={styles.card}>
                                 <h2>End current ongoing trip &rarr;</h2>

@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"strings"
 
 	"fmt"
@@ -80,10 +82,10 @@ type TripsRequestBody struct {
 	DriverID    string `json:"driver_id"`
 }
 
-func fetchDriver(url string) Driver {
+func fetchDriver(driverID string) Driver {
 	var result Driver
 
-	if resp, err := http.Get(url); err == nil {
+	if resp, err := http.Get(fmt.Sprintf("http://localhost:5000/api/v1/drivers/%s", driverID)); err == nil {
 		defer resp.Body.Close()
 		if body, err := ioutil.ReadAll(resp.Body); err == nil {
 			json.Unmarshal(body, &result)
@@ -97,10 +99,10 @@ func fetchDriver(url string) Driver {
 	return result
 }
 
-func fetchPassenger(url string) Passenger {
+func fetchPassenger(passengerID string) Passenger {
 	var result Passenger
 
-	if resp, err := http.Get(url); err == nil {
+	if resp, err := http.Get(fmt.Sprintf("http://localhost:5000/api/v1/passengers/%s", passengerID)); err == nil {
 		defer resp.Body.Close()
 		if body, err := ioutil.ReadAll(resp.Body); err == nil {
 			json.Unmarshal(body, &result)
@@ -121,6 +123,7 @@ func trips(res http.ResponseWriter, req *http.Request) {
 
 	formmatedFieldQuery := formmatedTripQueryField(params["driver_id"], params["passenger_id"], params["trip_progress"])
 	query := fmt.Sprintf("SELECT * FROM Trips %s ORDER BY CompletedTime DESC", formmatedFieldQuery)
+	fmt.Println(query)
 	databaseResults, err := db.Query(query)
 
 	if err != nil {
@@ -135,11 +138,11 @@ func trips(res http.ResponseWriter, req *http.Request) {
 		}
 
 		if trip.DriverID != "" {
-			trip.Driver = fetchDriver(fmt.Sprintf("http://localhost:5000/api/v1/drivers/%s", trip.DriverID))
+			trip.Driver = fetchDriver(trip.DriverID)
 		}
 
 		if trip.PassengerID != "" {
-			trip.Passenger = fetchPassenger(fmt.Sprintf("http://localhost:5000/api/v1/passengers/%s", trip.PassengerID))
+			trip.Passenger = fetchPassenger(trip.PassengerID)
 		}
 
 		if err != nil {
@@ -153,7 +156,7 @@ func trips(res http.ResponseWriter, req *http.Request) {
 }
 
 func formmatedTripQueryField(driverID []string, passengerID []string, tripProgress []string) string {
-	results := "WHERE "
+	var results string
 
 	if len(driverID) > 0 && driverID[0] != "" {
 		results += fmt.Sprintf("DriverID = '%s'", driverID[0])
@@ -176,11 +179,11 @@ func formmatedTripQueryField(driverID []string, passengerID []string, tripProgre
 		results += fmt.Sprintf("TripProgress = %d", parsedTripProgress)
 	}
 
-	if results == "WHERE " {
+	if results == "" {
 		return ""
 	}
 
-	return results
+	return "WHERE " + results
 }
 
 func trip(res http.ResponseWriter, req *http.Request) {
@@ -319,10 +322,10 @@ func trip(res http.ResponseWriter, req *http.Request) {
 					return
 				}
 
-				if tripFromDatabase.TripProgress != 2 && newTrip.TripProgress == 2 {
+				if tripFromDatabase.TripProgress != 3 && newTrip.TripProgress == 3 {
 					// update driver and passenger available status back to 1 once the trip is completed
-					updateDriverAvailableStatus(2, newTrip.DriverID)
-				} else if tripFromDatabase.TripProgress != 3 && newTrip.TripProgress == 3 {
+					updateDriverAvailableStatus(3, newTrip.DriverID)
+				} else if tripFromDatabase.TripProgress != 4 && newTrip.TripProgress == 4 {
 					// update driver and passenger available status back to 1 once the trip is completed
 					updateDriverAvailableStatus(1, tripFromDatabase.DriverID)
 					updatePassengerAvailableStatus(1, tripFromDatabase.PassengerID)
@@ -376,7 +379,14 @@ func createTrip(newTrip Trip, res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusConflict)
 		res.Write([]byte("409 - Duplicate trip ID"))
 	} else {
-		query := fmt.Sprintf("INSERT INTO Trips VALUES ('%s', '%s', NULL, '%s', '%s', '%d', '%d', '%d')", newTrip.TripID, newTrip.PassengerID, newTrip.PickupPostalCode, newTrip.DropoffPostalCode, 1, currentMs(), 0)
+		availableDriver := "NULL"
+		tripProgress := 1
+		if driver, err := retrieveAvailableDriver(); err == nil {
+			availableDriver = driver.DriverID
+			tripProgress = 2
+		}
+
+		query := fmt.Sprintf("INSERT INTO Trips VALUES ('%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d')", newTrip.TripID, newTrip.PassengerID, availableDriver, newTrip.PickupPostalCode, newTrip.DropoffPostalCode, tripProgress, currentMs(), 0)
 
 		_, err := db.Query(query)
 
@@ -385,30 +395,96 @@ func createTrip(newTrip Trip, res http.ResponseWriter, req *http.Request) {
 		}
 
 		updatePassengerAvailableStatus(2, newTrip.PassengerID)
+		if availableDriver != "NULL" {
+			updateDriverAvailableStatus(2, availableDriver)
+		}
 
 		res.WriteHeader(http.StatusCreated)
 		res.Write([]byte("201 - Trip added: " + newTrip.TripID))
 	}
 }
 
-func updateDriverAvailableStatus(availableStatus int, driverID string) {
-	query := fmt.Sprintf("UPDATE Drivers SET AvailableStatus='%d' WHERE DriverID='%s'", availableStatus, driverID)
-	fmt.Println(query)
-	_, err := db.Query(query)
+func retrieveAvailableDriver() (*Driver, error) {
+	var result []Driver
 
-	if err != nil {
-		panic(err.Error())
+	if resp, err := http.Get("http://localhost:5000/api/v1/drivers?available_status=1"); err == nil {
+		defer resp.Body.Close()
+		if body, err := ioutil.ReadAll(resp.Body); err == nil {
+			json.Unmarshal(body, &result)
+		} else {
+			log.Fatal(err)
+		}
+	} else {
+		log.Fatal(err)
 	}
+
+	if len(result) == 0 {
+		return nil, errors.New("no available drivers are found")
+	}
+
+	return &result[0], nil
+}
+
+func updateDriverAvailableStatus(availableStatus int, driverID string) {
+	body := make(map[string]interface{})
+
+	body["driver_id"] = driverID
+	body["available_status"] = availableStatus
+
+	// initialize http client
+	client := &http.Client{}
+
+	// marshal User to json
+	json, err := json.Marshal(body)
+	if err != nil {
+		panic(err)
+	}
+
+	// set the HTTP method, url, and request body
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("http://localhost:5000/api/v1/drivers/%s", driverID), bytes.NewBuffer(json))
+	if err != nil {
+		panic(err)
+	}
+
+	// set the request header Content-Type for json
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(resp.StatusCode)
 }
 
 func updatePassengerAvailableStatus(availableStatus int, passengerID string) {
-	query := fmt.Sprintf("UPDATE Passengers SET AvailableStatus='%d' WHERE PassengerID='%s'", availableStatus, passengerID)
+	body := make(map[string]interface{})
 
-	_, err := db.Query(query)
+	body["passenger_id"] = passengerID
+	body["available_status"] = availableStatus
 
+	// initialize http client
+	client := &http.Client{}
+
+	// marshal User to json
+	json, err := json.Marshal(body)
 	if err != nil {
-		panic(err.Error())
+		panic(err)
 	}
+
+	// set the HTTP method, url, and request body
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("http://localhost:5000/api/v1/passengers/%s", passengerID), bytes.NewBuffer(json))
+	if err != nil {
+		panic(err)
+	}
+
+	// set the request header Content-Type for json
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(resp.StatusCode)
 }
 
 func updateTripCompletedTime(tripid string) {

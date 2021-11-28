@@ -43,7 +43,7 @@ export default function DriverHome({ passenger_id, last_name, first_name, availa
 
                 {available_status == 2 &&
                     <p className={styles.description}>
-                        You are in the middle of the trip right now
+                        You are currently in an <span className={styles.blueColor}>ongoing</span> trip
                     </p>
                 }
 

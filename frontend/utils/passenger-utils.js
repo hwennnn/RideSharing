@@ -21,7 +21,7 @@ export async function getPassenger(passengerID) {
 }
 
 export async function retrieveCompletedTripsForPassenger(passengerID) {
-    const response = await axios.get(`${baseUrl}/trips?passenger_id=${passengerID}&trip_progress=3`, requestConfig)
+    const response = await axios.get(`${baseUrl}/trips?passenger_id=${passengerID}&trip_progress=4`, requestConfig)
 
     return response.data
 }

@@ -67,17 +67,17 @@ func drivers(res http.ResponseWriter, req *http.Request) {
 }
 
 func formattedDriverQueryField(availableStatus []string) string {
-	results := "WHERE "
+	var results string
 
 	if len(availableStatus) > 0 && availableStatus[0] != "" {
 		results += fmt.Sprintf("AvailableStatus = '%s'", availableStatus[0])
 	}
 
-	if results == "WHERE " {
+	if results == "" {
 		return ""
 	}
 
-	return results
+	return "WHERE " + results
 }
 
 func driver(res http.ResponseWriter, req *http.Request) {
