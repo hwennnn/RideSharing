@@ -66,6 +66,8 @@ type Trip struct {
 
 var db *sql.DB
 
+const authenticationToken = "1467a2a8-fff7-45b5-986d-679382d0707a"
+
 func currentMs() int64 {
 	return time.Now().Round(time.Millisecond).UnixNano() / 1e6
 }
@@ -85,16 +87,27 @@ type TripsRequestBody struct {
 func fetchDriver(driverID string) Driver {
 	var result Driver
 
-	if resp, err := http.Get(fmt.Sprintf("http://localhost:5000/api/v1/drivers/%s", driverID)); err == nil {
-		defer resp.Body.Close()
-		if body, err := ioutil.ReadAll(resp.Body); err == nil {
-			json.Unmarshal(body, &result)
-		} else {
-			log.Fatal(err)
-		}
-	} else {
-		log.Fatal(err)
+	url := fmt.Sprintf("http://localhost:5000/api/v1/drivers/%s", driverID)
+
+	// Create a Bearer string by appending string access token
+	var bearer = "Bearer " + authenticationToken
+
+	// Create a new request using http
+	req, _ := http.NewRequest("GET", url, nil)
+
+	// add authorization header to the req
+	req.Header.Add("Authorization", bearer)
+
+	// Send req using http Client
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error on response.\n[ERROR] -", err)
 	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	json.Unmarshal(body, &result)
 
 	return result
 }
@@ -102,16 +115,27 @@ func fetchDriver(driverID string) Driver {
 func fetchPassenger(passengerID string) Passenger {
 	var result Passenger
 
-	if resp, err := http.Get(fmt.Sprintf("http://localhost:5000/api/v1/passengers/%s", passengerID)); err == nil {
-		defer resp.Body.Close()
-		if body, err := ioutil.ReadAll(resp.Body); err == nil {
-			json.Unmarshal(body, &result)
-		} else {
-			log.Fatal(err)
-		}
-	} else {
-		log.Fatal(err)
+	url := fmt.Sprintf("http://localhost:5000/api/v1/passengers/%s", passengerID)
+
+	// Create a Bearer string by appending string access token
+	var bearer = "Bearer " + authenticationToken
+
+	// Create a new request using http
+	req, _ := http.NewRequest(http.MethodGet, url, nil)
+
+	// add authorization header to the req
+	req.Header.Add("Authorization", bearer)
+
+	// Send req using http Client
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error on response.\n[ERROR] -", err)
 	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	json.Unmarshal(body, &result)
 
 	return result
 }
@@ -207,11 +231,11 @@ func trip(res http.ResponseWriter, req *http.Request) {
 			}
 
 			if trip.DriverID != "" {
-				trip.Driver = fetchDriver(fmt.Sprintf("http://localhost:5000/api/v1/drivers/%s", trip.DriverID))
+				trip.Driver = fetchDriver(trip.DriverID)
 			}
 
 			if trip.PassengerID != "" {
-				trip.Passenger = fetchPassenger(fmt.Sprintf("http://localhost:5000/api/v1/passengers/%s", trip.PassengerID))
+				trip.Passenger = fetchPassenger(trip.PassengerID)
 			}
 
 			if err != nil {
@@ -323,7 +347,7 @@ func trip(res http.ResponseWriter, req *http.Request) {
 				}
 
 				if tripFromDatabase.TripProgress != 3 && newTrip.TripProgress == 3 {
-					// update driver and passenger available status back to 1 once the trip is completed
+					// update driver available status to 3 as driver has initiated the trip and currently during the trip
 					updateDriverAvailableStatus(3, newTrip.DriverID)
 				} else if tripFromDatabase.TripProgress != 4 && newTrip.TripProgress == 4 {
 					// update driver and passenger available status back to 1 once the trip is completed
@@ -407,16 +431,27 @@ func createTrip(newTrip Trip, res http.ResponseWriter, req *http.Request) {
 func retrieveAvailableDriver() (*Driver, error) {
 	var result []Driver
 
-	if resp, err := http.Get("http://localhost:5000/api/v1/drivers?available_status=1"); err == nil {
-		defer resp.Body.Close()
-		if body, err := ioutil.ReadAll(resp.Body); err == nil {
-			json.Unmarshal(body, &result)
-		} else {
-			log.Fatal(err)
-		}
-	} else {
-		log.Fatal(err)
+	url := "http://localhost:5000/api/v1/drivers?available_status=1"
+
+	// Create a Bearer string by appending string access token
+	var bearer = "Bearer " + authenticationToken
+
+	// Create a new request using http
+	req, _ := http.NewRequest(http.MethodGet, url, nil)
+
+	// add authorization header to the req
+	req.Header.Add("Authorization", bearer)
+
+	// Send req using http Client
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error on response.\n[ERROR] -", err)
 	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	json.Unmarshal(body, &result)
 
 	if len(result) == 0 {
 		return nil, errors.New("no available drivers are found")
@@ -426,6 +461,9 @@ func retrieveAvailableDriver() (*Driver, error) {
 }
 
 func updateDriverAvailableStatus(availableStatus int, driverID string) {
+	// Create a Bearer string by appending string access token
+	var bearer = "Bearer " + authenticationToken
+
 	body := make(map[string]interface{})
 
 	body["driver_id"] = driverID
@@ -448,6 +486,8 @@ func updateDriverAvailableStatus(availableStatus int, driverID string) {
 
 	// set the request header Content-Type for json
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	// add authorization header to the req
+	req.Header.Add("Authorization", bearer)
 	resp, err := client.Do(req)
 	if err != nil {
 		panic(err)
@@ -457,6 +497,9 @@ func updateDriverAvailableStatus(availableStatus int, driverID string) {
 }
 
 func updatePassengerAvailableStatus(availableStatus int, passengerID string) {
+	// Create a Bearer string by appending string access token
+	var bearer = "Bearer " + authenticationToken
+
 	body := make(map[string]interface{})
 
 	body["passenger_id"] = passengerID
@@ -479,6 +522,8 @@ func updatePassengerAvailableStatus(availableStatus int, passengerID string) {
 
 	// set the request header Content-Type for json
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	// add authorization header to the req
+	req.Header.Add("Authorization", bearer)
 	resp, err := client.Do(req)
 	if err != nil {
 		panic(err)
