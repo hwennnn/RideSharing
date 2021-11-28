@@ -66,7 +66,7 @@ type Trip struct {
 
 var db *sql.DB
 
-const authenticationToken = "1467a2a8-fff7-45b5-986d-679382d0707a"
+const authenticationToken = "2a6b36bf-61b9-4d0e-904c-7843e7b97308"
 
 func currentMs() int64 {
 	return time.Now().Round(time.Millisecond).UnixNano() / 1e6
@@ -87,7 +87,7 @@ type TripsRequestBody struct {
 func fetchDriver(driverID string) Driver {
 	var result Driver
 
-	url := fmt.Sprintf("http://localhost:5000/api/v1/drivers/%s", driverID)
+	url := fmt.Sprintf("http://localhost:4000/api/v1/drivers/%s", driverID)
 
 	// Create a Bearer string by appending string access token
 	var bearer = "Bearer " + authenticationToken
@@ -115,7 +115,7 @@ func fetchDriver(driverID string) Driver {
 func fetchPassenger(passengerID string) Passenger {
 	var result Passenger
 
-	url := fmt.Sprintf("http://localhost:5000/api/v1/passengers/%s", passengerID)
+	url := fmt.Sprintf("http://localhost:4000/api/v1/passengers/%s", passengerID)
 
 	// Create a Bearer string by appending string access token
 	var bearer = "Bearer " + authenticationToken
@@ -431,7 +431,7 @@ func createTrip(newTrip Trip, res http.ResponseWriter, req *http.Request) {
 func retrieveAvailableDriver() (*Driver, error) {
 	var result []Driver
 
-	url := "http://localhost:5000/api/v1/drivers?available_status=1"
+	url := "http://localhost:4000/api/v1/drivers?available_status=1"
 
 	// Create a Bearer string by appending string access token
 	var bearer = "Bearer " + authenticationToken
@@ -479,7 +479,7 @@ func updateDriverAvailableStatus(availableStatus int, driverID string) {
 	}
 
 	// set the HTTP method, url, and request body
-	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("http://localhost:5000/api/v1/drivers/%s", driverID), bytes.NewBuffer(json))
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("http://localhost:4000/api/v1/drivers/%s", driverID), bytes.NewBuffer(json))
 	if err != nil {
 		panic(err)
 	}
@@ -515,7 +515,7 @@ func updatePassengerAvailableStatus(availableStatus int, passengerID string) {
 	}
 
 	// set the HTTP method, url, and request body
-	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("http://localhost:5000/api/v1/passengers/%s", passengerID), bytes.NewBuffer(json))
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("http://localhost:4000/api/v1/passengers/%s", passengerID), bytes.NewBuffer(json))
 	if err != nil {
 		panic(err)
 	}
