@@ -4,7 +4,9 @@
 
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
-## Prerequisite
+## Getting started
+
+### Prerequisite
 
 You need npm installed
 
@@ -12,14 +14,14 @@ You need npm installed
 npm install npm@latest -g
 ```
 
-## Install all the packages
+### Install all the packages
 
 ```bash
 npm install
 npm ci
 ```
 
-## Usage
+### Usage
 
 ```bash
 npm run dev
