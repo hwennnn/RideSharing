@@ -174,33 +174,7 @@ func postTrip(res http.ResponseWriter, req *http.Request) {
 			res.WriteHeader(http.StatusConflict)
 			res.Write([]byte("409 - Duplicate trip ID"))
 		} else {
-			// initially set the available driver to null first
-			availableDriver := "NULL"
-			// initially set the progress as trip is not assigned a driver yet
-			tripProgress := 1
-
-			// if an available driver is found,
-			// update the availableDriver id and trip progress respectively
-			if driver, err := utils.RetrieveAvailableDriver(); err == nil {
-				availableDriver = driver.DriverID
-				tripProgress = 2
-			}
-
-			query := fmt.Sprintf("INSERT INTO Trips VALUES ('%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d')", newTrip.TripID, newTrip.PassengerID, availableDriver, newTrip.PickupPostalCode, newTrip.DropoffPostalCode, tripProgress, utils.CurrentMs(), 0)
-
-			_, err := db.Query(query)
-
-			if err != nil {
-				panic(err.Error())
-			}
-
-			// Since the trip has been created (meaning the trip is in the progress)
-			// update the passenger available status to 2
-			// update the driver avalable status to 2 if there is available driver
-			utils.UpdatePassengerAvailableStatus(2, newTrip.PassengerID)
-			if availableDriver != "NULL" {
-				utils.UpdateDriverAvailableStatus(2, availableDriver)
-			}
+			createTripHelper(newTrip)
 
 			res.WriteHeader(http.StatusCreated)
 			res.Write([]byte("201 - Trip added: " + newTrip.TripID))
@@ -209,6 +183,37 @@ func postTrip(res http.ResponseWriter, req *http.Request) {
 	} else {
 		res.WriteHeader(http.StatusUnprocessableEntity)
 		res.Write([]byte("422 - Please supply trip information in JSON format"))
+	}
+}
+
+// This method is used to insert a new trip into the database
+func createTripHelper(newTrip models.Trip) {
+	// initially set the available driver to null first (the driverID is nullable in the database)
+	availableDriver := "NULL"
+	// initially set the progress as trip is not assigned a driver yet
+	tripProgress := 1
+
+	// if an available driver is found,
+	// update the availableDriver id and trip progress respectively
+	if driver, err := utils.RetrieveAvailableDriver(); err == nil {
+		availableDriver = driver.DriverID
+		tripProgress = 2
+	}
+
+	query := fmt.Sprintf("INSERT INTO Trips VALUES ('%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d')", newTrip.TripID, newTrip.PassengerID, availableDriver, newTrip.PickupPostalCode, newTrip.DropoffPostalCode, tripProgress, utils.CurrentMs(), 0)
+
+	_, err := db.Query(query)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	// Since the trip has been created (meaning the trip is in the progress)
+	// update the passenger available status to 2
+	// update the driver avalable status to 2 if there is available driver
+	utils.UpdatePassengerAvailableStatus(2, newTrip.PassengerID)
+	if availableDriver != "NULL" {
+		utils.UpdateDriverAvailableStatus(2, availableDriver)
 	}
 }
 
@@ -241,26 +246,7 @@ func putTrip(res http.ResponseWriter, req *http.Request) {
 				return
 			}
 
-			availableDriver := "NULL"
-			tripProgress := 1
-
-			if driver, err := utils.RetrieveAvailableDriver(); err == nil {
-				availableDriver = driver.DriverID
-				tripProgress = 2
-			}
-
-			query := fmt.Sprintf("INSERT INTO Trips VALUES ('%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d')", newTrip.TripID, newTrip.PassengerID, availableDriver, newTrip.PickupPostalCode, newTrip.DropoffPostalCode, tripProgress, utils.CurrentMs(), 0)
-
-			_, err := db.Query(query)
-
-			if err != nil {
-				panic(err.Error())
-			}
-
-			utils.UpdatePassengerAvailableStatus(2, newTrip.PassengerID)
-			if availableDriver != "NULL" {
-				utils.UpdateDriverAvailableStatus(2, availableDriver)
-			}
+			createTripHelper(newTrip)
 
 			res.WriteHeader(http.StatusCreated)
 			res.Write([]byte("201 - Trip added: " + newTrip.TripID))
