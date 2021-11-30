@@ -9,6 +9,7 @@ type Driver struct {
 	IdentificationNumber string `json:"identification_number"`
 	CarLicenseNumber     string `json:"car_license_number"`
 	AvailableStatus      int    `json:"available_status"`
+	// Notes for Available Status
 	// 0 -> used by golang to indicate whether the integer variable has been initialised or not
 	// 1 => Online and available
 	// 2 => Online but during the trip
@@ -21,6 +22,7 @@ type Passenger struct {
 	MobileNumber    string `json:"mobile_number"`
 	EmailAddress    string `json:"email_address"`
 	AvailableStatus int    `json:"available_status"`
+	// Notes for Available Status
 	// 0 -> used by golang to indicate whether the integer variable has been initialised or not
 	// 1 => Online and available
 	// 2 => Online but during the trip
@@ -37,6 +39,7 @@ type Trip struct {
 	CompletedTime     int64     `json:"completed_time"`
 	Passenger         Passenger `json:"passenger"`
 	Driver            Driver    `json:"driver"`
+	// Notes for Trip Progress
 	// 0 -> used by golang to indicate whether the integer variable has been initialised or not
 	// 1 -> Created by passenger, but no driver is found to be assgined
 	// 2 -> A driver was already assigned for the trip, but the driver has not inititated the trip yet
