@@ -3,13 +3,13 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"strings"
 
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 
+	utils "backend/microservices/drivers/utils"
 	models "backend/models"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -26,14 +26,14 @@ func middleware(next http.Handler) http.Handler {
 	})
 }
 
-func drivers(res http.ResponseWriter, req *http.Request) {
+func getDrivers(res http.ResponseWriter, req *http.Request) {
 	var results []models.Driver
 
 	params := req.URL.Query()
 
-	formmatedFieldQuery := formattedDriverQueryField(params["available_status"])
+	formmatedFieldQuery := utils.FormattedDriverQueryField(params["available_status"])
 	query := fmt.Sprintf("SELECT * FROM Drivers %s", formmatedFieldQuery)
-	fmt.Println(query)
+
 	databaseResults, err := db.Query(query)
 
 	if err != nil {
@@ -48,233 +48,172 @@ func drivers(res http.ResponseWriter, req *http.Request) {
 			panic(err.Error())
 		}
 		results = append(results, driver)
-		fmt.Println(driver.DriverID, driver.FirstName, driver.LastName, driver.MobileNumber, driver.EmailAddress, driver.IdentificationNumber, driver.CarLicenseNumber, driver.AvailableStatus)
 	}
 	// returns all the courses in JSON
 	json.NewEncoder(res).Encode(results)
 }
 
-func formattedDriverQueryField(availableStatus []string) string {
-	var results string
-
-	if len(availableStatus) > 0 && availableStatus[0] != "" {
-		results += fmt.Sprintf("AvailableStatus = '%s'", availableStatus[0])
-	}
-
-	if results == "" {
-		return ""
-	}
-
-	return "WHERE " + results
-}
-
-func driver(res http.ResponseWriter, req *http.Request) {
+func getDriver(res http.ResponseWriter, req *http.Request) {
 	params := mux.Vars(req)
 	driverid := params["driverid"]
 
-	if req.Method == "GET" {
+	query := fmt.Sprintf("SELECT * FROM Drivers WHERE DriverID='%s'", driverid)
+	databaseResults, err := db.Query(query)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	var isExist bool
+	var driver models.Driver
+	for databaseResults.Next() {
+		err = databaseResults.Scan(&driver.DriverID, &driver.FirstName, &driver.LastName, &driver.MobileNumber, &driver.EmailAddress, &driver.IdentificationNumber, &driver.CarLicenseNumber, &driver.AvailableStatus)
+		if err != nil {
+			panic(err.Error())
+		}
+		isExist = true
+	}
+
+	if isExist {
+		json.NewEncoder(res).Encode(driver)
+	} else {
+		res.WriteHeader(http.StatusNotFound)
+		res.Write([]byte("404 - No driver found"))
+	}
+}
+
+func postDriver(res http.ResponseWriter, req *http.Request) {
+	params := mux.Vars(req)
+	driverid := params["driverid"]
+
+	// read the string sent to the service
+	var newDriver models.Driver
+	reqBody, err := ioutil.ReadAll(req.Body)
+
+	if err == nil {
+		// convert JSON to object
+		json.Unmarshal(reqBody, &newDriver)
+
+		if !utils.IsDriverJsonCompleted(newDriver) {
+			res.WriteHeader(http.StatusUnprocessableEntity)
+			res.Write([]byte("422 - Please supply driver information in JSON format"))
+			return
+		}
+
+		if driverid != newDriver.DriverID {
+			res.WriteHeader(http.StatusUnprocessableEntity)
+			res.Write([]byte("422 - The data in body and parameters do not match"))
+			return
+		}
+
+		// check if driver exists; add only if driver does not exist
 		query := fmt.Sprintf("SELECT * FROM Drivers WHERE DriverID='%s'", driverid)
 		databaseResults, err := db.Query(query)
 		if err != nil {
 			panic(err.Error())
 		}
 
-		var isExist bool
-		var driver models.Driver
+		var isDriverExist bool
 		for databaseResults.Next() {
-			err = databaseResults.Scan(&driver.DriverID, &driver.FirstName, &driver.LastName, &driver.MobileNumber, &driver.EmailAddress, &driver.IdentificationNumber, &driver.CarLicenseNumber, &driver.AvailableStatus)
 			if err != nil {
 				panic(err.Error())
 			}
-			isExist = true
+			isDriverExist = true
 		}
 
-		if isExist {
-			json.NewEncoder(res).Encode(driver)
+		if !isDriverExist {
+			query := fmt.Sprintf("INSERT INTO Drivers VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', %d)", newDriver.DriverID, newDriver.FirstName, newDriver.LastName, newDriver.MobileNumber, newDriver.EmailAddress, newDriver.IdentificationNumber, newDriver.CarLicenseNumber, 1)
+
+			_, err := db.Query(query)
+
+			if err != nil {
+				panic(err.Error())
+			}
+
+			res.WriteHeader(http.StatusCreated)
+			res.Write([]byte("201 - Driver added: " + driverid))
 		} else {
-			res.WriteHeader(http.StatusNotFound)
-			res.Write([]byte("404 - No driver found"))
+			res.WriteHeader(http.StatusConflict)
+			res.Write([]byte("409 - Duplicate driver ID"))
+		}
+	} else {
+		res.WriteHeader(http.StatusUnprocessableEntity)
+		res.Write([]byte("422 - Please supply driver information in JSON format"))
+	}
+}
+
+func putDriver(res http.ResponseWriter, req *http.Request) {
+	params := mux.Vars(req)
+	driverid := params["driverid"]
+
+	var newDriver models.Driver
+	reqBody, err := ioutil.ReadAll(req.Body)
+
+	if err == nil {
+		json.Unmarshal(reqBody, &newDriver)
+
+		if driverid != newDriver.DriverID {
+			res.WriteHeader(http.StatusUnprocessableEntity)
+			res.Write([]byte("422 - The data in body and parameters do not match"))
+			return
 		}
 
-	}
+		// check if driver exists; add only if driver does not exist
+		query := fmt.Sprintf("SELECT * FROM Drivers WHERE DriverID='%s'", driverid)
+		databaseResults, err := db.Query(query)
+		if err != nil {
+			panic(err.Error())
+		}
 
-	if req.Header.Get("Content-type") == "application/json" {
+		var isDriverExist bool
+		for databaseResults.Next() {
+			if err != nil {
+				panic(err.Error())
+			}
+			isDriverExist = true
+		}
 
-		// POST is for creating new driver
-		if req.Method == "POST" {
-
-			// read the string sent to the service
-			var newDriver models.Driver
-			reqBody, err := ioutil.ReadAll(req.Body)
-
-			if err == nil {
-				// convert JSON to object
-				json.Unmarshal(reqBody, &newDriver)
-
-				if !isDriverJsonCompleted(newDriver) {
-					res.WriteHeader(http.StatusUnprocessableEntity)
-					res.Write([]byte("422 - Please supply driver information in JSON format"))
-					return
-				}
-
-				if driverid != newDriver.DriverID {
-					res.WriteHeader(http.StatusUnprocessableEntity)
-					res.Write([]byte("422 - The data in body and parameters do not match"))
-					return
-				}
-
-				// check if driver exists; add only if driver does not exist
-				query := fmt.Sprintf("SELECT * FROM Drivers WHERE DriverID='%s'", driverid)
-				databaseResults, err := db.Query(query)
-				if err != nil {
-					panic(err.Error())
-				}
-
-				var isDriverExist bool
-				for databaseResults.Next() {
-					if err != nil {
-						panic(err.Error())
-					}
-					isDriverExist = true
-				}
-
-				if !isDriverExist {
-					query := fmt.Sprintf("INSERT INTO Drivers VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', %d)", newDriver.DriverID, newDriver.FirstName, newDriver.LastName, newDriver.MobileNumber, newDriver.EmailAddress, newDriver.IdentificationNumber, newDriver.CarLicenseNumber, 1)
-
-					_, err := db.Query(query)
-
-					if err != nil {
-						panic(err.Error())
-					}
-
-					res.WriteHeader(http.StatusCreated)
-					res.Write([]byte("201 - Driver added: " + driverid))
-				} else {
-					res.WriteHeader(http.StatusConflict)
-					res.Write([]byte("409 - Duplicate driver ID"))
-				}
-			} else {
+		if !isDriverExist {
+			if !utils.IsDriverJsonCompleted(newDriver) {
 				res.WriteHeader(http.StatusUnprocessableEntity)
 				res.Write([]byte("422 - Please supply driver information in JSON format"))
-			}
-		}
-	}
-
-	//---PUT is for creating or updating
-	// existing course---
-	if req.Method == "PUT" {
-		var newDriver models.Driver
-		reqBody, err := ioutil.ReadAll(req.Body)
-
-		if err == nil {
-			json.Unmarshal(reqBody, &newDriver)
-
-			if driverid != newDriver.DriverID {
-				res.WriteHeader(http.StatusUnprocessableEntity)
-				res.Write([]byte("422 - The data in body and parameters do not match"))
 				return
 			}
 
-			// check if driver exists; add only if driver does not exist
-			query := fmt.Sprintf("SELECT * FROM Drivers WHERE DriverID='%s'", driverid)
-			databaseResults, err := db.Query(query)
+			query := fmt.Sprintf("INSERT INTO Drivers VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', %d)", newDriver.DriverID, newDriver.FirstName, newDriver.LastName, newDriver.MobileNumber, newDriver.EmailAddress, newDriver.IdentificationNumber, newDriver.CarLicenseNumber, 1)
+
+			_, err := db.Query(query)
+
 			if err != nil {
 				panic(err.Error())
 			}
 
-			var isDriverExist bool
-			for databaseResults.Next() {
-				if err != nil {
-					panic(err.Error())
-				}
-				isDriverExist = true
-			}
-
-			if !isDriverExist {
-				if !isDriverJsonCompleted(newDriver) {
-					res.WriteHeader(http.StatusUnprocessableEntity)
-					res.Write([]byte("422 - Please supply driver information in JSON format"))
-					return
-				}
-
-				query := fmt.Sprintf("INSERT INTO Drivers VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', %d)", newDriver.DriverID, newDriver.FirstName, newDriver.LastName, newDriver.MobileNumber, newDriver.EmailAddress, newDriver.IdentificationNumber, newDriver.CarLicenseNumber, 1)
-
-				_, err := db.Query(query)
-
-				if err != nil {
-					panic(err.Error())
-				}
-
-				res.WriteHeader(http.StatusCreated)
-				res.Write([]byte("201 - Driver added: " + driverid))
-			} else {
-				formattedUpdateFieldQuery := formmatedUpdateDriverQueryField(newDriver)
-
-				if formattedUpdateFieldQuery == "" { // means there is no valid field can be updated
-					res.WriteHeader(http.StatusUnprocessableEntity)
-					res.Write([]byte("422 - Please supply driver information in JSON format"))
-					return
-				}
-
-				query := fmt.Sprintf("UPDATE Drivers SET %s WHERE DriverID='%s'", formattedUpdateFieldQuery, newDriver.DriverID)
-
-				_, err := db.Query(query)
-
-				if err != nil {
-					panic(err.Error())
-				}
-
-				res.WriteHeader(http.StatusAccepted)
-				res.Write([]byte("202 - Driver updated: " + driverid))
-			}
-
+			res.WriteHeader(http.StatusCreated)
+			res.Write([]byte("201 - Driver added: " + driverid))
 		} else {
-			res.WriteHeader(http.StatusUnprocessableEntity)
-			res.Write([]byte("422 - Please supply driver information in JSON format"))
+			formattedUpdateFieldQuery := utils.FormmatedUpdateDriverQueryField(newDriver)
+
+			if formattedUpdateFieldQuery == "" { // means there is no valid field can be updated
+				res.WriteHeader(http.StatusUnprocessableEntity)
+				res.Write([]byte("422 - Please supply driver information in JSON format"))
+				return
+			}
+
+			query := fmt.Sprintf("UPDATE Drivers SET %s WHERE DriverID='%s'", formattedUpdateFieldQuery, newDriver.DriverID)
+
+			_, err := db.Query(query)
+
+			if err != nil {
+				panic(err.Error())
+			}
+
+			res.WriteHeader(http.StatusAccepted)
+			res.Write([]byte("202 - Driver updated: " + driverid))
 		}
+
+	} else {
+		res.WriteHeader(http.StatusUnprocessableEntity)
+		res.Write([]byte("422 - Please supply driver information in JSON format"))
 	}
-}
-
-func formmatedUpdateDriverQueryField(newDriver models.Driver) string {
-	var fields []string
-
-	if newDriver.FirstName != "" {
-		fields = append(fields, fmt.Sprintf("FirstName='%s'", newDriver.FirstName))
-	}
-
-	if newDriver.LastName != "" {
-		fields = append(fields, fmt.Sprintf("LastName='%s'", newDriver.LastName))
-	}
-
-	if newDriver.MobileNumber != "" {
-		fields = append(fields, fmt.Sprintf("MobileNumber='%s'", newDriver.MobileNumber))
-	}
-
-	if newDriver.EmailAddress != "" {
-		fields = append(fields, fmt.Sprintf("EmailAddress='%s'", newDriver.EmailAddress))
-	}
-
-	if newDriver.CarLicenseNumber != "" {
-		fields = append(fields, fmt.Sprintf("CarLicenseNumber='%s'", newDriver.CarLicenseNumber))
-	}
-
-	if newDriver.AvailableStatus != 0 {
-		fields = append(fields, fmt.Sprintf("AvailableStatus='%d'", newDriver.AvailableStatus))
-	}
-
-	return strings.Join(fields, ", ")
-}
-
-func isDriverJsonCompleted(driver models.Driver) bool {
-	driverID := strings.TrimSpace(driver.DriverID)
-	firstName := strings.TrimSpace(driver.FirstName)
-	lastName := strings.TrimSpace(driver.LastName)
-	mobileNumber := strings.TrimSpace(driver.MobileNumber)
-	emailAddress := strings.TrimSpace(driver.EmailAddress)
-	identificationNumber := strings.TrimSpace(driver.IdentificationNumber)
-	carLicenseNumber := strings.TrimSpace(driver.CarLicenseNumber)
-	// fmt.Println(driverID, firstName, lastName, mobileNumber, emailAddress, identificationNumber, carLicenseNumber)
-	return driverID != "" && firstName != "" && lastName != "" && mobileNumber != "" && emailAddress != "" && identificationNumber != "" && carLicenseNumber != ""
 }
 
 func main() {
@@ -286,8 +225,10 @@ func main() {
 
 	router := mux.NewRouter()
 	router.Use(middleware)
-	router.HandleFunc("/api/v1/drivers", drivers).Methods("GET")
-	router.HandleFunc("/api/v1/drivers/{driverid}", driver).Methods("GET", "PUT", "POST")
+	router.HandleFunc("/api/v1/drivers", getDrivers).Methods("GET")
+	router.HandleFunc("/api/v1/drivers/{driverid}", getDriver).Methods("GET")
+	router.HandleFunc("/api/v1/drivers/{driverid}", postDriver).Methods("POST")
+	router.HandleFunc("/api/v1/drivers/{driverid}", putDriver).Methods("PUT")
 
 	handler := cors.AllowAll().Handler(router)
 
