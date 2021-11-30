@@ -10,24 +10,12 @@ import (
 	"log"
 	"net/http"
 
+	models "backend/models"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 )
-
-type Driver struct {
-	DriverID             string `json:"driver_id"`
-	FirstName            string `json:"first_name"`
-	LastName             string `json:"last_name"`
-	MobileNumber         string `json:"mobile_number"`
-	EmailAddress         string `json:"email_address"`
-	IdentificationNumber string `json:"identification_number"`
-	CarLicenseNumber     string `json:"car_license_number"`
-	AvailableStatus      int    `json:"available_status"`
-	// 0 -> used by golang to indicate whether the integer variable has been initialised or not
-	// 1 => Online and available
-	// 2 => Online but during the trip
-}
 
 var db *sql.DB
 
@@ -39,7 +27,7 @@ func middleware(next http.Handler) http.Handler {
 }
 
 func drivers(res http.ResponseWriter, req *http.Request) {
-	var results []Driver
+	var results []models.Driver
 
 	params := req.URL.Query()
 
@@ -54,7 +42,7 @@ func drivers(res http.ResponseWriter, req *http.Request) {
 
 	for databaseResults.Next() {
 		// map this type to the record in the table
-		var driver Driver
+		var driver models.Driver
 		err = databaseResults.Scan(&driver.DriverID, &driver.FirstName, &driver.LastName, &driver.MobileNumber, &driver.EmailAddress, &driver.IdentificationNumber, &driver.CarLicenseNumber, &driver.AvailableStatus)
 		if err != nil {
 			panic(err.Error())
@@ -92,7 +80,7 @@ func driver(res http.ResponseWriter, req *http.Request) {
 		}
 
 		var isExist bool
-		var driver Driver
+		var driver models.Driver
 		for databaseResults.Next() {
 			err = databaseResults.Scan(&driver.DriverID, &driver.FirstName, &driver.LastName, &driver.MobileNumber, &driver.EmailAddress, &driver.IdentificationNumber, &driver.CarLicenseNumber, &driver.AvailableStatus)
 			if err != nil {
@@ -116,7 +104,7 @@ func driver(res http.ResponseWriter, req *http.Request) {
 		if req.Method == "POST" {
 
 			// read the string sent to the service
-			var newDriver Driver
+			var newDriver models.Driver
 			reqBody, err := ioutil.ReadAll(req.Body)
 
 			if err == nil {
@@ -175,7 +163,7 @@ func driver(res http.ResponseWriter, req *http.Request) {
 	//---PUT is for creating or updating
 	// existing course---
 	if req.Method == "PUT" {
-		var newDriver Driver
+		var newDriver models.Driver
 		reqBody, err := ioutil.ReadAll(req.Body)
 
 		if err == nil {
@@ -247,7 +235,7 @@ func driver(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func formmatedUpdateDriverQueryField(newDriver Driver) string {
+func formmatedUpdateDriverQueryField(newDriver models.Driver) string {
 	var fields []string
 
 	if newDriver.FirstName != "" {
@@ -277,7 +265,7 @@ func formmatedUpdateDriverQueryField(newDriver Driver) string {
 	return strings.Join(fields, ", ")
 }
 
-func isDriverJsonCompleted(driver Driver) bool {
+func isDriverJsonCompleted(driver models.Driver) bool {
 	driverID := strings.TrimSpace(driver.DriverID)
 	firstName := strings.TrimSpace(driver.FirstName)
 	lastName := strings.TrimSpace(driver.LastName)

@@ -10,22 +10,12 @@ import (
 	"log"
 	"net/http"
 
+	models "backend/models"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 )
-
-type Passenger struct {
-	PassengerID     string `json:"passenger_id"`
-	FirstName       string `json:"first_name"`
-	LastName        string `json:"last_name"`
-	MobileNumber    string `json:"mobile_number"`
-	EmailAddress    string `json:"email_address"`
-	AvailableStatus int    `json:"available_status"`
-	// 0 -> used by golang to indicate whether the integer variable has been initialised or not
-	// 1 => Online and available
-	// 2 => Online but during the trip
-}
 
 var db *sql.DB
 
@@ -37,7 +27,7 @@ func middleware(next http.Handler) http.Handler {
 }
 
 func passengers(res http.ResponseWriter, req *http.Request) {
-	var results []Passenger
+	var results []models.Passenger
 	databaseResults, err := db.Query("Select * FROM Passengers")
 
 	if err != nil {
@@ -46,7 +36,7 @@ func passengers(res http.ResponseWriter, req *http.Request) {
 
 	for databaseResults.Next() {
 		// map this type to the record in the table
-		var passenger Passenger
+		var passenger models.Passenger
 		err = databaseResults.Scan(&passenger.PassengerID, &passenger.FirstName, &passenger.LastName, &passenger.MobileNumber, &passenger.EmailAddress, &passenger.AvailableStatus)
 		if err != nil {
 			panic(err.Error())
@@ -71,7 +61,7 @@ func passenger(res http.ResponseWriter, req *http.Request) {
 		}
 
 		var isExist bool
-		var passenger Passenger
+		var passenger models.Passenger
 		for databaseResults.Next() {
 			err = databaseResults.Scan(&passenger.PassengerID, &passenger.FirstName, &passenger.LastName, &passenger.MobileNumber, &passenger.EmailAddress, &passenger.AvailableStatus)
 			if err != nil {
@@ -95,7 +85,7 @@ func passenger(res http.ResponseWriter, req *http.Request) {
 		if req.Method == "POST" {
 
 			// read the string sent to the service
-			var newPassenger Passenger
+			var newPassenger models.Passenger
 			reqBody, err := ioutil.ReadAll(req.Body)
 
 			if err == nil {
@@ -154,7 +144,7 @@ func passenger(res http.ResponseWriter, req *http.Request) {
 	//---PUT is for creating or updating
 	// existing course---
 	if req.Method == "PUT" {
-		var newPassenger Passenger
+		var newPassenger models.Passenger
 		reqBody, err := ioutil.ReadAll(req.Body)
 
 		if err == nil {
@@ -226,7 +216,7 @@ func passenger(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func formmatedUpdatePassengerQueryField(newPassenger Passenger) string {
+func formmatedUpdatePassengerQueryField(newPassenger models.Passenger) string {
 	var fields []string
 
 	if newPassenger.FirstName != "" {
@@ -252,7 +242,7 @@ func formmatedUpdatePassengerQueryField(newPassenger Passenger) string {
 	return strings.Join(fields, ", ")
 }
 
-func isPassengerJsonCompleted(passenger Passenger) bool {
+func isPassengerJsonCompleted(passenger models.Passenger) bool {
 	passengerID := strings.TrimSpace(passenger.PassengerID)
 	firstName := strings.TrimSpace(passenger.FirstName)
 	lastName := strings.TrimSpace(passenger.LastName)

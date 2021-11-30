@@ -14,55 +14,12 @@ import (
 	"strconv"
 	"time"
 
+	models "backend/models"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 )
-
-type Driver struct {
-	DriverID             string `json:"driver_id"`
-	FirstName            string `json:"first_name"`
-	LastName             string `json:"last_name"`
-	MobileNumber         string `json:"mobile_number"`
-	EmailAddress         string `json:"email_address"`
-	IdentificationNumber string `json:"identification_number"`
-	CarLicenseNumber     string `json:"car_license_number"`
-	AvailableStatus      int    `json:"available_status"`
-	// 0 -> used by golang to indicate whether the integer variable has been initialised or not
-	// 1 => Online and available
-	// 2 => Online but during the trip
-}
-
-type Passenger struct {
-	PassengerID     string `json:"passenger_id"`
-	FirstName       string `json:"first_name"`
-	LastName        string `json:"last_name"`
-	MobileNumber    string `json:"mobile_number"`
-	EmailAddress    string `json:"email_address"`
-	AvailableStatus int    `json:"available_status"`
-	// 0 -> used by golang to indicate whether the integer variable has been initialised or not
-	// 1 => Online and available
-	// 2 => Online but during the trip
-}
-
-type Trip struct {
-	TripID            string `json:"trip_id"`
-	PassengerID       string `json:"passenger_id"`
-	sqlDriverID       sql.NullString
-	DriverID          string    `json:"driver_id"`
-	PickupPostalCode  string    `json:"pickup_postal_code"`
-	DropoffPostalCode string    `json:"dropoff_postal_code"`
-	TripProgress      int       `json:"trip_progress"`
-	CreatedTime       int64     `json:"created_time"`
-	CompletedTime     int64     `json:"completed_time"`
-	Passenger         Passenger `json:"passenger"`
-	Driver            Driver    `json:"driver"`
-	// 0 -> used by golang to indicate whether the integer variable has been initialised or not
-	// 1 -> Created by passenger, but no driver is found to be assgined
-	// 2 -> A driver was already assigned for the trip, but the driver has not inititated the trip yet
-	// 3 -> The trip is ongoing (Driver has initiated the trip)
-	// 4 -> The trip has ended (Driver has ended the trip)
-}
 
 var db *sql.DB
 
@@ -84,8 +41,8 @@ type TripsRequestBody struct {
 	DriverID    string `json:"driver_id"`
 }
 
-func fetchDriver(driverID string) Driver {
-	var result Driver
+func fetchDriver(driverID string) models.Driver {
+	var result models.Driver
 
 	url := fmt.Sprintf("http://localhost:4000/api/v1/drivers/%s", driverID)
 
@@ -112,8 +69,8 @@ func fetchDriver(driverID string) Driver {
 	return result
 }
 
-func fetchPassenger(passengerID string) Passenger {
-	var result Passenger
+func fetchPassenger(passengerID string) models.Passenger {
+	var result models.Passenger
 
 	url := fmt.Sprintf("http://localhost:4000/api/v1/passengers/%s", passengerID)
 
@@ -141,7 +98,7 @@ func fetchPassenger(passengerID string) Passenger {
 }
 
 func trips(res http.ResponseWriter, req *http.Request) {
-	var results []Trip
+	var results []models.Trip
 
 	params := req.URL.Query()
 
@@ -155,10 +112,11 @@ func trips(res http.ResponseWriter, req *http.Request) {
 	}
 
 	for databaseResults.Next() {
-		var trip Trip
-		err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.sqlDriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.CreatedTime, &trip.CompletedTime)
-		if trip.sqlDriverID.Valid {
-			trip.DriverID = trip.sqlDriverID.String
+		var trip models.Trip
+		var sqlDriverID sql.NullString
+		err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &sqlDriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.CreatedTime, &trip.CompletedTime)
+		if sqlDriverID.Valid {
+			trip.DriverID = sqlDriverID.String
 		}
 
 		if trip.DriverID != "" {
@@ -222,12 +180,13 @@ func trip(res http.ResponseWriter, req *http.Request) {
 		}
 
 		var isExist bool
-		var trip Trip
+		var trip models.Trip
+		var sqlDriverID sql.NullString
 		for databaseResults.Next() {
-			err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &trip.sqlDriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.CreatedTime, &trip.CompletedTime)
+			err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &sqlDriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.CreatedTime, &trip.CompletedTime)
 
-			if trip.sqlDriverID.Valid {
-				trip.DriverID = trip.sqlDriverID.String
+			if sqlDriverID.Valid {
+				trip.DriverID = sqlDriverID.String
 			}
 
 			if trip.DriverID != "" {
@@ -258,7 +217,7 @@ func trip(res http.ResponseWriter, req *http.Request) {
 		// POST is for creating new driver
 		if req.Method == "POST" {
 			// read the string sent to the service
-			var newTrip Trip
+			var newTrip models.Trip
 			reqBody, err := ioutil.ReadAll(req.Body)
 
 			if err == nil {
@@ -290,7 +249,7 @@ func trip(res http.ResponseWriter, req *http.Request) {
 	//---PUT is for creating or updating
 	// existing course---
 	if req.Method == "PUT" {
-		var newTrip Trip
+		var newTrip models.Trip
 		reqBody, err := ioutil.ReadAll(req.Body)
 
 		if err == nil {
@@ -310,7 +269,7 @@ func trip(res http.ResponseWriter, req *http.Request) {
 				panic(err.Error())
 			}
 
-			var tripFromDatabase Trip
+			var tripFromDatabase models.Trip
 			var isTripExist bool
 			for databaseResults.Next() {
 				if err != nil {
@@ -395,7 +354,7 @@ func isTripExist(tripid string) bool {
 	return exist
 }
 
-func createTrip(newTrip Trip, res http.ResponseWriter, req *http.Request) {
+func createTrip(newTrip models.Trip, res http.ResponseWriter, req *http.Request) {
 
 	exist := isTripExist(newTrip.TripID)
 
@@ -428,8 +387,8 @@ func createTrip(newTrip Trip, res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func retrieveAvailableDriver() (*Driver, error) {
-	var result []Driver
+func retrieveAvailableDriver() (*models.Driver, error) {
+	var result []models.Driver
 
 	url := "http://localhost:4000/api/v1/drivers?available_status=1"
 
@@ -542,7 +501,7 @@ func updateTripCompletedTime(tripid string) {
 	}
 }
 
-func formattedUpdateTripQueryField(trip Trip) string {
+func formattedUpdateTripQueryField(trip models.Trip) string {
 	var fields []string
 
 	if trip.DriverID != "" {
@@ -556,7 +515,7 @@ func formattedUpdateTripQueryField(trip Trip) string {
 	return strings.Join(fields, ", ")
 }
 
-func isTripJsonCompleted(trip Trip) bool {
+func isTripJsonCompleted(trip models.Trip) bool {
 	tripID := strings.TrimSpace(trip.TripID)
 	passengerID := strings.TrimSpace(trip.PassengerID)
 	pickupPostalCode := strings.TrimSpace(trip.PickupPostalCode)
