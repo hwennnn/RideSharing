@@ -19,11 +19,18 @@ import (
 )
 
 const authenticationToken = "2a6b36bf-61b9-4d0e-904c-7843e7b97308"
+const serverEndpointBaseURL = "http://localhost:4000/api/v1"
 
+var driverEndpointBaseURL = fmt.Sprintf("%s/drivers", serverEndpointBaseURL)
+var passengerEndpointBaseURL = fmt.Sprintf("%s/passengers", serverEndpointBaseURL)
+
+// retrieve current milliseconds since epoch
 func CurrentMs() int64 {
 	return time.Now().Round(time.Millisecond).UnixNano() / 1e6
 }
 
+// This method is to convert the field query from request query parameters,
+// to the sql syntax code
 func FormmatedTripQueryField(driverID []string, passengerID []string, tripProgress []string) string {
 	var results string
 
@@ -55,10 +62,38 @@ func FormmatedTripQueryField(driverID []string, passengerID []string, tripProgre
 	return "WHERE " + results
 }
 
+// This method is to convert the field query from request query parameters,
+// to the sql syntax code
+func FormattedUpdateTripQueryField(trip models.Trip) string {
+	var fields []string
+
+	if trip.DriverID != "" {
+		fields = append(fields, fmt.Sprintf("DriverID='%s'", trip.DriverID))
+	}
+
+	if trip.TripProgress != 0 {
+		fields = append(fields, fmt.Sprintf("TripProgress='%d'", trip.TripProgress))
+	}
+
+	return strings.Join(fields, ", ")
+}
+
+// This method is to return boolean value whether the given trip information is completed
+func IsTripJsonCompleted(trip models.Trip) bool {
+	tripID := strings.TrimSpace(trip.TripID)
+	passengerID := strings.TrimSpace(trip.PassengerID)
+	pickupPostalCode := strings.TrimSpace(trip.PickupPostalCode)
+	dropoffPostalCode := strings.TrimSpace(trip.DropoffPostalCode)
+
+	return tripID != "" && passengerID != "" && pickupPostalCode != "" && dropoffPostalCode != ""
+}
+
+// This method will send a request to driver microservice
+// in order to retrieve driver information
 func FetchDriver(driverID string) models.Driver {
 	var result models.Driver
 
-	url := fmt.Sprintf("http://localhost:4000/api/v1/drivers/%s", driverID)
+	url := fmt.Sprintf("%s/%s", driverEndpointBaseURL, driverID)
 
 	// Create a Bearer string by appending string access token
 	var bearer = "Bearer " + authenticationToken
@@ -83,10 +118,12 @@ func FetchDriver(driverID string) models.Driver {
 	return result
 }
 
+// This method will send a request to passenger microservice
+// in order to retrieve passenger information
 func FetchPassenger(passengerID string) models.Passenger {
 	var result models.Passenger
 
-	url := fmt.Sprintf("http://localhost:4000/api/v1/passengers/%s", passengerID)
+	url := fmt.Sprintf("%s/%s", passengerEndpointBaseURL, passengerID)
 
 	// Create a Bearer string by appending string access token
 	var bearer = "Bearer " + authenticationToken
@@ -111,10 +148,12 @@ func FetchPassenger(passengerID string) models.Passenger {
 	return result
 }
 
+// This method will send a request to driver microservice
+// in order to retrieve available drivers information
 func RetrieveAvailableDriver() (*models.Driver, error) {
 	var result []models.Driver
 
-	url := "http://localhost:4000/api/v1/drivers?available_status=1"
+	url := fmt.Sprintf("%s?available_status=1", driverEndpointBaseURL)
 
 	// Create a Bearer string by appending string access token
 	var bearer = "Bearer " + authenticationToken
@@ -143,6 +182,8 @@ func RetrieveAvailableDriver() (*models.Driver, error) {
 	return &result[0], nil
 }
 
+// This method will send a request to driver microservice
+// in order to update driver available status
 func UpdateDriverAvailableStatus(availableStatus int, driverID string) {
 	// Create a Bearer string by appending string access token
 	var bearer = "Bearer " + authenticationToken
@@ -162,7 +203,7 @@ func UpdateDriverAvailableStatus(availableStatus int, driverID string) {
 	}
 
 	// set the HTTP method, url, and request body
-	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("http://localhost:4000/api/v1/drivers/%s", driverID), bytes.NewBuffer(json))
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/%s", driverEndpointBaseURL, driverID), bytes.NewBuffer(json))
 	if err != nil {
 		panic(err)
 	}
@@ -179,6 +220,8 @@ func UpdateDriverAvailableStatus(availableStatus int, driverID string) {
 	fmt.Println(resp.StatusCode)
 }
 
+// This method will send a request to passenger microservice
+// in order to update passenger available status
 func UpdatePassengerAvailableStatus(availableStatus int, passengerID string) {
 	// Create a Bearer string by appending string access token
 	var bearer = "Bearer " + authenticationToken
@@ -198,7 +241,7 @@ func UpdatePassengerAvailableStatus(availableStatus int, passengerID string) {
 	}
 
 	// set the HTTP method, url, and request body
-	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("http://localhost:4000/api/v1/passengers/%s", passengerID), bytes.NewBuffer(json))
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/%s", passengerEndpointBaseURL, passengerID), bytes.NewBuffer(json))
 	if err != nil {
 		panic(err)
 	}
@@ -213,27 +256,4 @@ func UpdatePassengerAvailableStatus(availableStatus int, passengerID string) {
 	}
 
 	fmt.Println(resp.StatusCode)
-}
-
-func FormattedUpdateTripQueryField(trip models.Trip) string {
-	var fields []string
-
-	if trip.DriverID != "" {
-		fields = append(fields, fmt.Sprintf("DriverID='%s'", trip.DriverID))
-	}
-
-	if trip.TripProgress != 0 {
-		fields = append(fields, fmt.Sprintf("TripProgress='%d'", trip.TripProgress))
-	}
-
-	return strings.Join(fields, ", ")
-}
-
-func IsTripJsonCompleted(trip models.Trip) bool {
-	tripID := strings.TrimSpace(trip.TripID)
-	passengerID := strings.TrimSpace(trip.PassengerID)
-	pickupPostalCode := strings.TrimSpace(trip.PickupPostalCode)
-	dropoffPostalCode := strings.TrimSpace(trip.DropoffPostalCode)
-
-	return tripID != "" && passengerID != "" && pickupPostalCode != "" && dropoffPostalCode != ""
 }
