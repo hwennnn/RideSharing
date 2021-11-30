@@ -145,6 +145,9 @@ func postPassenger(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// This method is used for either creating or updating the passenger depends whether the passengerID exists
+// Case 1: If passengerID exists, update the passenger using the information retrieved from request body
+// Case 2: If passengerID does not exist, create the passenger using the information retrieved from request body
 func putPassenger(res http.ResponseWriter, req *http.Request) {
 	params := mux.Vars(req)
 	passengerid := params["passengerid"]

@@ -150,6 +150,9 @@ func postDriver(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// This method is used for either creating or updating the driver depends whether the driverID exists
+// Case 1: If driverID exists, update the driver using the information retrieved from request body
+// Case 2: If driverID does not exist, create the driver using the information retrieved from request body
 func putDriver(res http.ResponseWriter, req *http.Request) {
 	params := mux.Vars(req)
 	driverid := params["driverid"]
