@@ -13,6 +13,8 @@ app.use(helmet()); //safety
 app.use(cors()); //safety
 app.use(express.json()); //receive do respond with request
 
+// the middleware to authenticate the token 
+// to ensure the requests are valid and sent from the micorservices server.
 app.use(tokenAuthentication)
 
 app.use('/api/v1/drivers', driversRouter)
