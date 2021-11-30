@@ -3,6 +3,10 @@ import express from 'express';
 
 const passengerRouter = express.Router();
 
+// Redirect the requests to the passenger microservice
+// HTTP 307 Temporary Redirect is used
+// so that the method and the body of the original request are reused to perform the redirected request
+
 passengerRouter.get("/", function (req, res) {
     res.redirect(`${passengerEndpointBaseURL}/`)
 });
