@@ -7,6 +7,7 @@ import (
 	models "backend/models"
 )
 
+// This method is to return boolean value whether the given driver information is completed
 func IsDriverJsonCompleted(driver models.Driver) bool {
 	driverID := strings.TrimSpace(driver.DriverID)
 	firstName := strings.TrimSpace(driver.FirstName)
@@ -15,10 +16,12 @@ func IsDriverJsonCompleted(driver models.Driver) bool {
 	emailAddress := strings.TrimSpace(driver.EmailAddress)
 	identificationNumber := strings.TrimSpace(driver.IdentificationNumber)
 	carLicenseNumber := strings.TrimSpace(driver.CarLicenseNumber)
-	// fmt.Println(driverID, firstName, lastName, mobileNumber, emailAddress, identificationNumber, carLicenseNumber)
+
 	return driverID != "" && firstName != "" && lastName != "" && mobileNumber != "" && emailAddress != "" && identificationNumber != "" && carLicenseNumber != ""
 }
 
+// This method is to convert the field query from request query parameters,
+// to the sql syntax code
 func FormmatedUpdateDriverQueryField(newDriver models.Driver) string {
 	var fields []string
 
@@ -49,6 +52,8 @@ func FormmatedUpdateDriverQueryField(newDriver models.Driver) string {
 	return strings.Join(fields, ", ")
 }
 
+// This method is to convert the field query from request query parameters,
+// to the sql syntax code
 func FormattedDriverQueryField(availableStatus []string) string {
 	var results string
 
