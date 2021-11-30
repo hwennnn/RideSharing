@@ -1,19 +1,15 @@
 package main
 
 import (
-	"bytes"
 	"database/sql"
 	"encoding/json"
-	"errors"
-	"strings"
 
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strconv"
-	"time"
 
+	utils "backend/microservices/trips/utils"
 	models "backend/models"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -21,13 +17,8 @@ import (
 	"github.com/rs/cors"
 )
 
+// global database handler object
 var db *sql.DB
-
-const authenticationToken = "2a6b36bf-61b9-4d0e-904c-7843e7b97308"
-
-func currentMs() int64 {
-	return time.Now().Round(time.Millisecond).UnixNano() / 1e6
-}
 
 func middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
@@ -36,75 +27,13 @@ func middleware(next http.Handler) http.Handler {
 	})
 }
 
-type TripsRequestBody struct {
-	PassengerID string `json:"passenger_id"`
-	DriverID    string `json:"driver_id"`
-}
-
-func fetchDriver(driverID string) models.Driver {
-	var result models.Driver
-
-	url := fmt.Sprintf("http://localhost:4000/api/v1/drivers/%s", driverID)
-
-	// Create a Bearer string by appending string access token
-	var bearer = "Bearer " + authenticationToken
-
-	// Create a new request using http
-	req, _ := http.NewRequest("GET", url, nil)
-
-	// add authorization header to the req
-	req.Header.Add("Authorization", bearer)
-
-	// Send req using http Client
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Println("Error on response.\n[ERROR] -", err)
-	}
-	defer resp.Body.Close()
-
-	body, _ := ioutil.ReadAll(resp.Body)
-	json.Unmarshal(body, &result)
-
-	return result
-}
-
-func fetchPassenger(passengerID string) models.Passenger {
-	var result models.Passenger
-
-	url := fmt.Sprintf("http://localhost:4000/api/v1/passengers/%s", passengerID)
-
-	// Create a Bearer string by appending string access token
-	var bearer = "Bearer " + authenticationToken
-
-	// Create a new request using http
-	req, _ := http.NewRequest(http.MethodGet, url, nil)
-
-	// add authorization header to the req
-	req.Header.Add("Authorization", bearer)
-
-	// Send req using http Client
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Println("Error on response.\n[ERROR] -", err)
-	}
-	defer resp.Body.Close()
-
-	body, _ := ioutil.ReadAll(resp.Body)
-	json.Unmarshal(body, &result)
-
-	return result
-}
-
-func trips(res http.ResponseWriter, req *http.Request) {
+func getTrips(res http.ResponseWriter, req *http.Request) {
 	var results []models.Trip
 
 	params := req.URL.Query()
 
-	formmatedFieldQuery := formmatedTripQueryField(params["driver_id"], params["passenger_id"], params["trip_progress"])
+	formmatedFieldQuery := utils.FormmatedTripQueryField(params["driver_id"], params["passenger_id"], params["trip_progress"])
 	query := fmt.Sprintf("SELECT * FROM Trips %s ORDER BY CompletedTime DESC", formmatedFieldQuery)
-	fmt.Println(query)
 	databaseResults, err := db.Query(query)
 
 	if err != nil {
@@ -120,11 +49,11 @@ func trips(res http.ResponseWriter, req *http.Request) {
 		}
 
 		if trip.DriverID != "" {
-			trip.Driver = fetchDriver(trip.DriverID)
+			trip.Driver = utils.FetchDriver(trip.DriverID)
 		}
 
 		if trip.PassengerID != "" {
-			trip.Passenger = fetchPassenger(trip.PassengerID)
+			trip.Passenger = utils.FetchPassenger(trip.PassengerID)
 		}
 
 		if err != nil {
@@ -137,391 +66,210 @@ func trips(res http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(res).Encode(results)
 }
 
-func formmatedTripQueryField(driverID []string, passengerID []string, tripProgress []string) string {
-	var results string
-
-	if len(driverID) > 0 && driverID[0] != "" {
-		results += fmt.Sprintf("DriverID = '%s'", driverID[0])
-	}
-
-	if len(passengerID) > 0 && passengerID[0] != "" {
-		if results != "" {
-			results += " AND "
-		}
-
-		results += fmt.Sprintf("PassengerID = '%s'", passengerID[0])
-	}
-
-	if len(tripProgress) > 0 && tripProgress[0] != "" {
-		if results != "" {
-			results += " AND "
-		}
-		parsedTripProgress, _ := strconv.ParseInt(tripProgress[0], 10, 64)
-
-		results += fmt.Sprintf("TripProgress = %d", parsedTripProgress)
-	}
-
-	if results == "" {
-		return ""
-	}
-
-	return "WHERE " + results
-}
-
-func trip(res http.ResponseWriter, req *http.Request) {
+func getTrip(res http.ResponseWriter, req *http.Request) {
 	params := mux.Vars(req)
 	tripid := params["tripid"]
 
-	if req.Method == "GET" {
-		query := fmt.Sprintf("SELECT * FROM Trips WHERE TripID='%s'", tripid)
-		databaseResults, err := db.Query(query)
-		if err != nil {
-			panic(err.Error())
-		}
+	isDriverExist, trip := getTripHelper(tripid)
 
-		var isExist bool
-		var trip models.Trip
-		var sqlDriverID sql.NullString
-		for databaseResults.Next() {
-			err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &sqlDriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.CreatedTime, &trip.CompletedTime)
-
-			if sqlDriverID.Valid {
-				trip.DriverID = sqlDriverID.String
-			}
-
-			if trip.DriverID != "" {
-				trip.Driver = fetchDriver(trip.DriverID)
-			}
-
-			if trip.PassengerID != "" {
-				trip.Passenger = fetchPassenger(trip.PassengerID)
-			}
-
-			if err != nil {
-				panic(err.Error())
-			}
-			isExist = true
-		}
-
-		if isExist {
-			json.NewEncoder(res).Encode(trip)
-		} else {
-			res.WriteHeader(http.StatusNotFound)
-			res.Write([]byte("404 - No Trip found"))
-		}
-
-	}
-
-	if req.Header.Get("Content-type") == "application/json" {
-
-		// POST is for creating new driver
-		if req.Method == "POST" {
-			// read the string sent to the service
-			var newTrip models.Trip
-			reqBody, err := ioutil.ReadAll(req.Body)
-
-			if err == nil {
-				// convert JSON to object
-				json.Unmarshal(reqBody, &newTrip)
-
-				if !isTripJsonCompleted(newTrip) {
-					res.WriteHeader(http.StatusUnprocessableEntity)
-					res.Write([]byte("422 - Please supply trip information in JSON format"))
-					return
-				}
-
-				if tripid != newTrip.TripID {
-					res.WriteHeader(http.StatusUnprocessableEntity)
-					res.Write([]byte("422 - The data in body and parameters do not match"))
-					return
-				}
-
-				createTrip(newTrip, res, req)
-
-			} else {
-				res.WriteHeader(http.StatusUnprocessableEntity)
-				res.Write([]byte("422 - Please supply trip information in JSON format"))
-			}
-
-		}
-	}
-
-	//---PUT is for creating or updating
-	// existing course---
-	if req.Method == "PUT" {
-		var newTrip models.Trip
-		reqBody, err := ioutil.ReadAll(req.Body)
-
-		if err == nil {
-			json.Unmarshal(reqBody, &newTrip)
-
-			if tripid != newTrip.TripID {
-				res.WriteHeader(http.StatusUnprocessableEntity)
-				res.Write([]byte("422 - The data in body and parameters do not match"))
-				return
-			}
-
-			// check if trip exists; add only if trip does not exist
-			query := fmt.Sprintf("SELECT * FROM Trips WHERE TripID='%s'", tripid)
-
-			databaseResults, err := db.Query(query)
-			if err != nil {
-				panic(err.Error())
-			}
-
-			var tripFromDatabase models.Trip
-			var isTripExist bool
-			for databaseResults.Next() {
-				if err != nil {
-					panic(err.Error())
-				}
-				err = databaseResults.Scan(&tripFromDatabase.TripID, &tripFromDatabase.PassengerID, &tripFromDatabase.DriverID, &tripFromDatabase.PickupPostalCode, &tripFromDatabase.DropoffPostalCode, &tripFromDatabase.TripProgress, &tripFromDatabase.CreatedTime, &tripFromDatabase.CompletedTime)
-				isTripExist = true
-			}
-
-			if !isTripExist {
-				if !isTripJsonCompleted(newTrip) {
-					res.WriteHeader(http.StatusUnprocessableEntity)
-					res.Write([]byte("422 - Please supply trip information in JSON format"))
-					return
-				}
-
-				query := fmt.Sprintf("INSERT INTO Trips VALUES ('%s', '%s', NULL, '%s', '%s', '%d', '%d', '%d')", newTrip.TripID, newTrip.PassengerID, newTrip.PickupPostalCode, newTrip.DropoffPostalCode, 1, currentMs(), 0)
-
-				_, err := db.Query(query)
-
-				if err != nil {
-					panic(err.Error())
-				}
-
-				res.WriteHeader(http.StatusCreated)
-				res.Write([]byte("201 - Trip added: " + tripid))
-			} else {
-				formattedUpdateFieldQuery := formattedUpdateTripQueryField(newTrip)
-
-				if formattedUpdateFieldQuery == "" { // means there is no valid field can be updated
-					res.WriteHeader(http.StatusUnprocessableEntity)
-					res.Write([]byte("422 - Please supply trip information in JSON format"))
-					return
-				}
-
-				if tripFromDatabase.TripProgress != 3 && newTrip.TripProgress == 3 {
-					// update driver available status to 3 as driver has initiated the trip and currently during the trip
-					updateDriverAvailableStatus(3, newTrip.DriverID)
-				} else if tripFromDatabase.TripProgress != 4 && newTrip.TripProgress == 4 {
-					// update driver and passenger available status back to 1 once the trip is completed
-					updateDriverAvailableStatus(1, tripFromDatabase.DriverID)
-					updatePassengerAvailableStatus(1, tripFromDatabase.PassengerID)
-					updateTripCompletedTime(tripid)
-				}
-
-				query := fmt.Sprintf("UPDATE Trips SET %s WHERE TripID='%s'", formattedUpdateFieldQuery, newTrip.TripID)
-
-				_, err := db.Query(query)
-
-				if err != nil {
-					panic(err.Error())
-				}
-
-				res.WriteHeader(http.StatusAccepted)
-				res.Write([]byte("202 - Trip updated: " + tripid))
-			}
-
-		} else {
-			res.WriteHeader(http.StatusUnprocessableEntity)
-			res.Write([]byte("422 - Please supply trip information in JSON format"))
-		}
+	if isDriverExist {
+		json.NewEncoder(res).Encode(trip)
+	} else {
+		res.WriteHeader(http.StatusNotFound)
+		res.Write([]byte("404 - No Trip found"))
 	}
 }
 
 // check if trip exists by tripid
-func isTripExist(tripid string) bool {
-	exist := false
+func getTripHelper(tripid string) (bool, models.Trip) {
 	query := fmt.Sprintf("SELECT * FROM Trips WHERE TripID='%s'", tripid)
 	databaseResults, err := db.Query(query)
-
 	if err != nil {
 		panic(err.Error())
 	}
 
+	var isExist bool
+	var trip models.Trip
+	var sqlDriverID sql.NullString
 	for databaseResults.Next() {
+		err = databaseResults.Scan(&trip.TripID, &trip.PassengerID, &sqlDriverID, &trip.PickupPostalCode, &trip.DropoffPostalCode, &trip.TripProgress, &trip.CreatedTime, &trip.CompletedTime)
+
+		if sqlDriverID.Valid {
+			trip.DriverID = sqlDriverID.String
+		}
+
+		if trip.DriverID != "" {
+			trip.Driver = utils.FetchDriver(trip.DriverID)
+		}
+
+		if trip.PassengerID != "" {
+			trip.Passenger = utils.FetchPassenger(trip.PassengerID)
+		}
+
 		if err != nil {
 			panic(err.Error())
 		}
-		exist = true
+		isExist = true
 	}
 
-	return exist
+	return isExist, trip
 }
 
-func createTrip(newTrip models.Trip, res http.ResponseWriter, req *http.Request) {
+func postTrip(res http.ResponseWriter, req *http.Request) {
+	params := mux.Vars(req)
+	tripid := params["tripid"]
 
-	exist := isTripExist(newTrip.TripID)
+	// read the string sent to the service
+	var newTrip models.Trip
+	reqBody, err := ioutil.ReadAll(req.Body)
 
-	if exist {
-		res.WriteHeader(http.StatusConflict)
-		res.Write([]byte("409 - Duplicate trip ID"))
+	if err == nil {
+		// convert JSON to object
+		json.Unmarshal(reqBody, &newTrip)
+
+		if !utils.IsTripJsonCompleted(newTrip) {
+			res.WriteHeader(http.StatusUnprocessableEntity)
+			res.Write([]byte("422 - Please supply trip information in JSON format"))
+			return
+		}
+
+		if tripid != newTrip.TripID {
+			res.WriteHeader(http.StatusUnprocessableEntity)
+			res.Write([]byte("422 - The data in body and parameters do not match"))
+			return
+		}
+
+		isTripExist, _ := getTripHelper(newTrip.TripID)
+
+		if isTripExist {
+			res.WriteHeader(http.StatusConflict)
+			res.Write([]byte("409 - Duplicate trip ID"))
+		} else {
+			availableDriver := "NULL"
+			tripProgress := 1
+
+			if driver, err := utils.RetrieveAvailableDriver(); err == nil {
+				availableDriver = driver.DriverID
+				tripProgress = 2
+			}
+
+			query := fmt.Sprintf("INSERT INTO Trips VALUES ('%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d')", newTrip.TripID, newTrip.PassengerID, availableDriver, newTrip.PickupPostalCode, newTrip.DropoffPostalCode, tripProgress, utils.CurrentMs(), 0)
+
+			_, err := db.Query(query)
+
+			if err != nil {
+				panic(err.Error())
+			}
+
+			utils.UpdatePassengerAvailableStatus(2, newTrip.PassengerID)
+			if availableDriver != "NULL" {
+				utils.UpdateDriverAvailableStatus(2, availableDriver)
+			}
+
+			res.WriteHeader(http.StatusCreated)
+			res.Write([]byte("201 - Trip added: " + newTrip.TripID))
+		}
+
 	} else {
-		availableDriver := "NULL"
-		tripProgress := 1
-		if driver, err := retrieveAvailableDriver(); err == nil {
-			availableDriver = driver.DriverID
-			tripProgress = 2
-		}
-
-		query := fmt.Sprintf("INSERT INTO Trips VALUES ('%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d')", newTrip.TripID, newTrip.PassengerID, availableDriver, newTrip.PickupPostalCode, newTrip.DropoffPostalCode, tripProgress, currentMs(), 0)
-
-		_, err := db.Query(query)
-
-		if err != nil {
-			panic(err.Error())
-		}
-
-		updatePassengerAvailableStatus(2, newTrip.PassengerID)
-		if availableDriver != "NULL" {
-			updateDriverAvailableStatus(2, availableDriver)
-		}
-
-		res.WriteHeader(http.StatusCreated)
-		res.Write([]byte("201 - Trip added: " + newTrip.TripID))
+		res.WriteHeader(http.StatusUnprocessableEntity)
+		res.Write([]byte("422 - Please supply trip information in JSON format"))
 	}
 }
 
-func retrieveAvailableDriver() (*models.Driver, error) {
-	var result []models.Driver
+func putTrip(res http.ResponseWriter, req *http.Request) {
+	params := mux.Vars(req)
+	tripid := params["tripid"]
 
-	url := "http://localhost:4000/api/v1/drivers?available_status=1"
+	var newTrip models.Trip
+	reqBody, err := ioutil.ReadAll(req.Body)
 
-	// Create a Bearer string by appending string access token
-	var bearer = "Bearer " + authenticationToken
+	if err == nil {
+		json.Unmarshal(reqBody, &newTrip)
 
-	// Create a new request using http
-	req, _ := http.NewRequest(http.MethodGet, url, nil)
+		if tripid != newTrip.TripID {
+			res.WriteHeader(http.StatusUnprocessableEntity)
+			res.Write([]byte("422 - The data in body and parameters do not match"))
+			return
+		}
 
-	// add authorization header to the req
-	req.Header.Add("Authorization", bearer)
+		// check if trip exists; add only if trip does not exist
+		isTripExist, tripFromDatabase := getTripHelper(tripid)
 
-	// Send req using http Client
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Println("Error on response.\n[ERROR] -", err)
+		if !isTripExist {
+			if !utils.IsTripJsonCompleted(newTrip) {
+				res.WriteHeader(http.StatusUnprocessableEntity)
+				res.Write([]byte("422 - Please supply trip information in JSON format"))
+				return
+			}
+
+			availableDriver := "NULL"
+			tripProgress := 1
+
+			if driver, err := utils.RetrieveAvailableDriver(); err == nil {
+				availableDriver = driver.DriverID
+				tripProgress = 2
+			}
+
+			query := fmt.Sprintf("INSERT INTO Trips VALUES ('%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d')", newTrip.TripID, newTrip.PassengerID, availableDriver, newTrip.PickupPostalCode, newTrip.DropoffPostalCode, tripProgress, utils.CurrentMs(), 0)
+
+			_, err := db.Query(query)
+
+			if err != nil {
+				panic(err.Error())
+			}
+
+			utils.UpdatePassengerAvailableStatus(2, newTrip.PassengerID)
+			if availableDriver != "NULL" {
+				utils.UpdateDriverAvailableStatus(2, availableDriver)
+			}
+
+			res.WriteHeader(http.StatusCreated)
+			res.Write([]byte("201 - Trip added: " + newTrip.TripID))
+		} else {
+			formattedUpdateFieldQuery := utils.FormattedUpdateTripQueryField(newTrip)
+
+			if formattedUpdateFieldQuery == "" { // means there is no valid field can be updated
+				res.WriteHeader(http.StatusUnprocessableEntity)
+				res.Write([]byte("422 - Please supply trip information in JSON format"))
+				return
+			}
+
+			if tripFromDatabase.TripProgress != 3 && newTrip.TripProgress == 3 {
+				// update driver available status to 3 as driver has initiated the trip and currently during the trip
+				utils.UpdateDriverAvailableStatus(3, newTrip.DriverID)
+			} else if tripFromDatabase.TripProgress != 4 && newTrip.TripProgress == 4 {
+				// update driver and passenger available status back to 1 once the trip is completed
+				utils.UpdateDriverAvailableStatus(1, tripFromDatabase.DriverID)
+				utils.UpdatePassengerAvailableStatus(1, tripFromDatabase.PassengerID)
+				updateTripCompletedTime(tripid)
+			}
+
+			query := fmt.Sprintf("UPDATE Trips SET %s WHERE TripID='%s'", formattedUpdateFieldQuery, newTrip.TripID)
+
+			_, err := db.Query(query)
+
+			if err != nil {
+				panic(err.Error())
+			}
+
+			res.WriteHeader(http.StatusAccepted)
+			res.Write([]byte("202 - Trip updated: " + tripid))
+		}
+
+	} else {
+		res.WriteHeader(http.StatusUnprocessableEntity)
+		res.Write([]byte("422 - Please supply trip information in JSON format"))
 	}
-	defer resp.Body.Close()
-
-	body, _ := ioutil.ReadAll(resp.Body)
-	json.Unmarshal(body, &result)
-
-	if len(result) == 0 {
-		return nil, errors.New("no available drivers are found")
-	}
-
-	return &result[0], nil
-}
-
-func updateDriverAvailableStatus(availableStatus int, driverID string) {
-	// Create a Bearer string by appending string access token
-	var bearer = "Bearer " + authenticationToken
-
-	body := make(map[string]interface{})
-
-	body["driver_id"] = driverID
-	body["available_status"] = availableStatus
-
-	// initialize http client
-	client := &http.Client{}
-
-	// marshal User to json
-	json, err := json.Marshal(body)
-	if err != nil {
-		panic(err)
-	}
-
-	// set the HTTP method, url, and request body
-	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("http://localhost:4000/api/v1/drivers/%s", driverID), bytes.NewBuffer(json))
-	if err != nil {
-		panic(err)
-	}
-
-	// set the request header Content-Type for json
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	// add authorization header to the req
-	req.Header.Add("Authorization", bearer)
-	resp, err := client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println(resp.StatusCode)
-}
-
-func updatePassengerAvailableStatus(availableStatus int, passengerID string) {
-	// Create a Bearer string by appending string access token
-	var bearer = "Bearer " + authenticationToken
-
-	body := make(map[string]interface{})
-
-	body["passenger_id"] = passengerID
-	body["available_status"] = availableStatus
-
-	// initialize http client
-	client := &http.Client{}
-
-	// marshal User to json
-	json, err := json.Marshal(body)
-	if err != nil {
-		panic(err)
-	}
-
-	// set the HTTP method, url, and request body
-	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("http://localhost:4000/api/v1/passengers/%s", passengerID), bytes.NewBuffer(json))
-	if err != nil {
-		panic(err)
-	}
-
-	// set the request header Content-Type for json
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	// add authorization header to the req
-	req.Header.Add("Authorization", bearer)
-	resp, err := client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println(resp.StatusCode)
 }
 
 func updateTripCompletedTime(tripid string) {
-	query := fmt.Sprintf("UPDATE Trips SET CompletedTime='%d' WHERE TripID='%s'", currentMs(), tripid)
+	query := fmt.Sprintf("UPDATE Trips SET CompletedTime='%d' WHERE TripID='%s'", utils.CurrentMs(), tripid)
 
 	_, err := db.Query(query)
 
 	if err != nil {
 		panic(err.Error())
 	}
-}
-
-func formattedUpdateTripQueryField(trip models.Trip) string {
-	var fields []string
-
-	if trip.DriverID != "" {
-		fields = append(fields, fmt.Sprintf("DriverID='%s'", trip.DriverID))
-	}
-
-	if trip.TripProgress != 0 {
-		fields = append(fields, fmt.Sprintf("TripProgress='%d'", trip.TripProgress))
-	}
-
-	return strings.Join(fields, ", ")
-}
-
-func isTripJsonCompleted(trip models.Trip) bool {
-	tripID := strings.TrimSpace(trip.TripID)
-	passengerID := strings.TrimSpace(trip.PassengerID)
-	pickupPostalCode := strings.TrimSpace(trip.PickupPostalCode)
-	dropoffPostalCode := strings.TrimSpace(trip.DropoffPostalCode)
-
-	return tripID != "" && passengerID != "" && pickupPostalCode != "" && dropoffPostalCode != ""
 }
 
 func main() {
@@ -534,8 +282,10 @@ func main() {
 	router := mux.NewRouter()
 	router.Use(middleware)
 
-	router.HandleFunc("/api/v1/trips", trips).Methods("GET")
-	router.HandleFunc("/api/v1/trips/{tripid}", trip).Methods("GET", "PUT", "POST")
+	router.HandleFunc("/api/v1/trips", getTrips).Methods("GET")
+	router.HandleFunc("/api/v1/trips/{tripid}", getTrip).Methods("GET")
+	router.HandleFunc("/api/v1/trips/{tripid}", postTrip).Methods("POST")
+	router.HandleFunc("/api/v1/trips/{tripid}", putTrip).Methods("PUT")
 
 	handler := cors.AllowAll().Handler(router)
 
