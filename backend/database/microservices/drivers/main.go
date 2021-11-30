@@ -61,7 +61,7 @@ func getDrivers(res http.ResponseWriter, req *http.Request) {
 }
 
 // This method is used to retrieve a driver from MySQL by specific driverID,
-// and return the result in json otherwise NULL
+// and return the result in json otherwise return 404 code
 func getDriver(res http.ResponseWriter, req *http.Request) {
 	params := mux.Vars(req)
 	driverid := params["driverid"]
@@ -76,6 +76,8 @@ func getDriver(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// This helper method helps to query the driver from the database,
+// and return (boolean, driver) tuple object
 func getDriverHelper(driverID string) (bool, models.Driver) {
 	query := fmt.Sprintf("SELECT * FROM Drivers WHERE DriverID='%s'", driverID)
 	databaseResults, err := db.Query(query)
@@ -104,7 +106,7 @@ func postDriver(res http.ResponseWriter, req *http.Request) {
 	params := mux.Vars(req)
 	driverid := params["driverid"]
 
-	// read the string sent to the service
+	// read the body string sent to the service
 	var newDriver models.Driver
 	reqBody, err := ioutil.ReadAll(req.Body)
 
