@@ -9,7 +9,7 @@ You would need golang installed. Refer to this [guide](https://go.dev/doc/instal
 ### Install golang dependencies
 
 ```bash
-cd backend/database ## cd into database folder
+cd backend/database # cd into database folder
 
 go mod download # install require dependencies for the go backend
 ```
