@@ -69,3 +69,7 @@ With this generalised backend server, there would be only one server endpoint su
 For example, when the user wants to create a passenger account, the http request containing passenger information will be sent to the generalised server `localhost:5000`. The server will then redirect the request to the passenger microservice for the passenger account creation. The result will then sent back to the originated frontend server.
 
 Similarly, the server will also **authenticate the bearer token** to ensure the requests are valid and sent from the frontend server. When no or incorrect token is sent, that http request will be blocked, and 403 status code which indicates access forbidden will be sent back.
+
+## Data Structures
+
+## Backend API Documentation
