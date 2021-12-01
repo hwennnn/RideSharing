@@ -51,16 +51,5 @@ INSERT INTO Drivers (DriverID, FirstName, LastName, MobileNumber, EmailAddress, 
 
 -- Insert Trip Data
 INSERT INTO Trips (TripID, PassengerID, DriverID, PickupPostalCode, DropoffPostalCode, TripProgress, CreatedTime, CompletedTime) VALUES ('1', '1', '2', '642678', '730022', 1, 1637424569024, 0);
-UPDATE Trips SET TripProgress = 2 WHERE TripID = '1';
 INSERT INTO Trips (TripID, PassengerID, DriverID, PickupPostalCode, DropoffPostalCode, TripProgress, CreatedTime, CompletedTime) VALUES ('2', '2', '3', '111111', '222222', 1, 1637524569024, 0);
-UPDATE Trips SET TripProgress = 3 WHERE TripID = '2';
-INSERT INTO Trips (TripID, PassengerID, DriverID, PickupPostalCode, DropoffPostalCode, TripProgress, CreatedTime, CompletedTime) VALUES ('3', '1', '3', '333333', '444444', 2, 1637424565554, 0);
-UPDATE Trips SET TripProgress = 2 WHERE TripID = '3';
-
-
-SELECT * FROM Trips t
-INNER JOIN Drivers d ON t.DriverID = d.DriverID 
-INNER JOIN Passengers p ON t.PassengerID = p.PassengerID
-WHERE t.DriverID = '2';
-
-SELECT * FROM Trips t INNER JOIN Drivers d ON t.DriverID = d.DriverID INNER JOIN Passengers p ON t.PassengerID = p.PassengerID WHERE t.TripProgress = 1
+INSERT INTO Trips (TripID, PassengerID, DriverID, PickupPostalCode, DropoffPostalCode, TripProgress, CreatedTime, CompletedTime) VALUES ('3', '1', '3', '333333', '444444', 1, 1637424565554, 0);

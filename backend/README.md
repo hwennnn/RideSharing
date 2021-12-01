@@ -15,9 +15,21 @@ This folder contains all the backend logic written in microservices, and a serve
 
 ## Usage
 
+### Prerequisite
+
+You would need MySQL installed. Refer to this [guide](https://dev.mysql.com/doc/mysql-installation-excerpt/5.7/en/) on how to download and install MySQL on your machine.
+
+### Execute MySQL setup script
+
+The script helps to create the database and tables. It also helps to setup some initial dummy data for the demo purposes. If u **encounter errors when executing the script**, its likely u already have a database called RideSharing, you will need to drop that table before executing the command below.
+
+```bash
+mysql> source path/to/setup.sql
+```
+
 ### Start microservice server
 
-Refer to this [README guide](database/README.md) to start the 3 microsevice servers.
+Refer to this [README guide](database/README.md) to start the 3 microsevices servers.
 
 ### Start express server
 
