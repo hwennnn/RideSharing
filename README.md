@@ -28,7 +28,7 @@ Refer to this [README guide](frontend/README.md) to start the next.js frontend.
 
 ![Architecture Diagram](docs/architecture_diagram.png)
 
-## Backend Architecture Design Consideration
+## Architecture Design Consideration
 
 ### Microservices design
 
@@ -38,7 +38,7 @@ In general, each microservice is connected to the same MySQL database. **(Discla
 
 Each of the microservice is **fully independent from one and another**. The three microservices **serve at different localhost endpoint with different port numbers**, where the driver, passenger and trip microservices serves at 8080, 8081 and 8082 port numbers respectively.
 
-In the case when one microservice needs to communicate with another microservices, **anti-corruption layer** is implemented between the layer in the backend.
+In the case when one microservice needs to communicate with another microservices, **anti-corruption layer** is implemented between the layer in the backend to facilitate the communication.
 
 ### Anti-corruption layer
 
@@ -53,3 +53,10 @@ In the project, the express server serves at `localhost:4000`. When one microser
 The usage of ACL in the project is that when the trip microservice needs to communicate with both driver and passenger microservice in order to retrieve the driver and passenger information for the trip. The trip microservice will send http request with related information to the ACL, and the ACL will redirect the requests to respective microservices and return the desired result back to the trip microservice.
 
 In addition, the ACL will also **authenticate the bearer token** to ensure the requests are valid and sent from the legitimate microservices server. When no or incorrect token is sent, that http request will be blocked, and 403 status code which indicates access forbidden will be sent back.
+
+### React Next.js Frontend
+
+The frontend is written is React.js with Next.js. The frontend simulates the login, account creation, editing profile, creating trip, initiating or ending trip, and viewing past completed trips. Refer [here](frontend) to the screenshots of frontend.
+In the case when the frontend wants to communicate with the backend server to fulfill client requests, a **general-purpose API backend server** is implemented in between the layer of frontend and backend to facilitate the communication.
+
+### General-Purpose API Backend Server
