@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	models "backend/models"
+	models "drivers/models"
 )
 
 // This method is to return boolean value whether the given driver information is completed

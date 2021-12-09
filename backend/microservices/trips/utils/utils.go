@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"time"
 
-	models "backend/models"
+	models "trips/models"
 
 	_ "github.com/go-sql-driver/mysql"
 )

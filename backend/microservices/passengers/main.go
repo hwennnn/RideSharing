@@ -9,8 +9,8 @@ import (
 	"log"
 	"net/http"
 
-	utils "backend/microservices/passengers/utils"
-	models "backend/models"
+	models "passengers/models"
+	utils "passengers/utils"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"

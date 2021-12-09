@@ -1,4 +1,4 @@
-module backend
+module trips
 
 go 1.13
 

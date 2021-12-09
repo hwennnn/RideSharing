@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	models "backend/models"
+	models "passengers/models"
 )
 
 // This method is to convert the field query from request query parameters,

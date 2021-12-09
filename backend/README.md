@@ -29,7 +29,7 @@ mysql> source path/to/setup.sql
 
 ### Start microservice server
 
-Refer to this [README guide](database/README.md) to start the 3 microsevices servers.
+Refer to this [README guide](microservices/README.md) to start the 3 microsevices servers.
 
 ### Start express server
 

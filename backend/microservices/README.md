@@ -6,18 +6,12 @@
 
 You would need golang installed. Refer to this [guide](https://go.dev/doc/install) on how to download and install golang on your machine.
 
-### Install golang dependencies
-
-```bash
-cd backend/database # cd into database folder
-
-go mod download # install require dependencies for the go backend
-```
-
 ### Start Microservice #1: Drivers
 
 ```bash
 cd microservices/drivers
+
+go mod download # install require dependencies for the go backend
 
 go run main.go
 ```
@@ -27,6 +21,8 @@ go run main.go
 ```bash
 cd microservices/passengers
 
+go mod download
+
 go run main.go
 ```
 
@@ -34,6 +30,8 @@ go run main.go
 
 ```bash
 cd microservices/trips
+
+go mod download
 
 go run main.go
 ```
