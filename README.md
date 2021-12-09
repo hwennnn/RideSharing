@@ -110,3 +110,12 @@ Similarly, the server will also **authenticate the bearer token** to ensure the 
 |    trip_progress    |    int    | The trip progress of the trip.**<br> 0 -> used by golang to indicate whether the integer variable has been initialised or not <br>1 -> Created by passenger, but no driver is found to be assgined<br>2 -> A driver was already assigned for the trip, but the driver has not inititated the trip yet<br>3 -> The trip is ongoing (Driver has initiated the trip)<br> 4 -> The trip has ended (Driver has ended the trip)** |
 |      passenger      | Passenger |                                                                                                                                                             The passenger object of the trip. This field is used when returning results to the frontend server.                                                                                                                                                             |
 |       driver        |  Driver   |                                                                                                                                                              The driver object of the trip. This field is used when returning results to the frontend server.                                                                                                                                                               |
+
+## **Credits**
+
+<table>
+  <tr>
+    <td align="center"><a href="https://github.com/hwennnn"><img src="https://avatars3.githubusercontent.com/u/54523581?s=460&u=a649d3ed6c70ffe2fa69f37c0870415668149113&v=4" width="100px;" alt=""/><br /><sub><b>Wai Hou Man <br> (S10197636F) </b></sub></a><br />
+    </td>
+  </tr>
+</table>
