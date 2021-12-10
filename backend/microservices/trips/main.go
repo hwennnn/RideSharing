@@ -87,9 +87,9 @@ func getTrip(res http.ResponseWriter, req *http.Request) {
 	params := mux.Vars(req)
 	tripid := params["tripid"]
 
-	isDriverExist, trip := getTripHelper(tripid)
+	isTripExist, trip := getTripHelper(tripid)
 
-	if isDriverExist {
+	if isTripExist {
 		json.NewEncoder(res).Encode(trip)
 	} else {
 		res.WriteHeader(http.StatusNotFound)
