@@ -14,7 +14,7 @@ There is a total of **6 servers** need to be started. You should be able to see 
 
 ### Microservices Backend
 
-Refer to this [README guide](backend/README.md) to start the 3 microsevice servers + 1 express server which acts as anti-corruption layer.
+Refer to this [README guide](backend/README.md) to start the 3 microsevice servers + 1 express server which acts as anti-corruption layer, as well as executing sql setup script.
 
 ### General-Purpose API Backend
 
