@@ -12,7 +12,8 @@ type Driver struct {
 	// Notes for Available Status
 	// 0 -> used by golang to indicate whether the integer variable has been initialised or not
 	// 1 => Online and available
-	// 2 => Online but during the trip
+	// 2 => Online and assigned a trip by system (but the trip has not been initiated yet)
+	// 3 => Online and during the trip
 }
 
 type Passenger struct {
