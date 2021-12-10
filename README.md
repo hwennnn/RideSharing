@@ -5,7 +5,7 @@
 |       Codebase       |                Description                |                       Port numbers used (localhost)                        |
 | :------------------: | :---------------------------------------: | :------------------------------------------------------------------------: |
 | [frontend](frontend) |          React Next.js Frontend           |                                    3000                                    |
-|  [backend](backend)  | Microservices connected to MySQL Database | **Driver**: 8000<br>**Passenger**: 8081<br>**Trip**: 8082<br>**ACL**: 4000 |
+|  [backend](backend)  | Microservices connected to MySQL Database | **Driver**: 8080<br>**Passenger**: 8081<br>**Trip**: 8082<br>**ACL**: 4000 |
 |   [server](server)   |    General-Purpose API Backend Server     |                                    5000                                    |
 
 ## Usage
