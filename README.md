@@ -56,7 +56,7 @@ In addition, the ACL will also **authenticate the bearer token** to ensure the r
 
 ### React Next.js Frontend
 
-The frontend is written is React.js with Next.js. The frontend simulates the features of ride-sharing platform such as the user login, account creation, profile edit, creating trip, initiating or ending trip, and viewing past completed trips. Refer [here](frontend) to the screenshots of frontend.
+The frontend is written is React.js with Next.js. The frontend simulates the features of ride-sharing platform such as the user login, account creation, profile edit, creating trip, initiating or ending trip, and viewing past completed trips.
 
 In the case when the frontend wants to communicate with the backend server to fulfill client requests, a **general-purpose API backend server** is implemented in between the layer of frontend and backend to facilitate the communication.
 
