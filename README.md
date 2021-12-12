@@ -56,7 +56,7 @@ The usage of ACL in the project is that when the trip microservice needs to comm
 
 In addition, the ACL will also **authenticate the bearer token** to ensure the requests are valid and sent from the legitimate microservices server. When no or incorrect token is sent, that http request will be blocked, and 403 status code which indicates access forbidden will be sent back.
 
-**Notes: Different authentication token is used in ACL and general-purpose API backend server. In other words, client requests to ACL (internal server) will never be go through.**
+**Notes: Different authentication tokens are used in ACL and general-purpose API backend server. In other words, client requests to ACL (internal communication server) will never go through as different set of tokens are used for the authentication in ACL and general API server.**
 
 ### React Next.js Frontend
 
@@ -74,7 +74,7 @@ For example, when the user wants to create a passenger account, the http request
 
 Similarly, the server will also **authenticate the bearer token** to ensure the requests are valid and sent from the frontend server. When no or incorrect token is sent, that http request will be blocked, and 403 status code which indicates access forbidden will be sent back.
 
-**Notes: Different authentication token is used in ACL and general-purpose API backend server. In other words, client requests to ACL (internal server) will never be go through.**
+**Notes: Different authentication tokens are used in ACL and general-purpose API backend server. In other words, client requests to ACL (internal communication server) will never go through as different set of tokens are used for the authentication in ACL and general API server.**
 
 ## Data Structures
 
