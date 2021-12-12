@@ -38,6 +38,8 @@ In general, each microservice is connected to the same MySQL database. **(Discla
 
 Each of the microservice is **fully independent from one and another**. The three microservices **serve at different localhost endpoint with different port numbers**, where the driver, passenger and trip microservices serves at 8080, 8081 and 8082 port numbers respectively.
 
+In addition, each microservice is completely isolated from another microservices, hence will not cause any negative impacts when the other microservice is down or being redeployed. With the design of the microservice, each microservice is independent and loosely coupled, and can be independent upgraded or restarted, unlike monolith or n-tier architecture which would need to restart the whole system after the new deployment.
+
 In the case when one microservice needs to communicate with another microservices, **anti-corruption layer** is implemented between the layer in the backend to facilitate the communication.
 
 ### Anti-corruption layer
@@ -54,6 +56,8 @@ The usage of ACL in the project is that when the trip microservice needs to comm
 
 In addition, the ACL will also **authenticate the bearer token** to ensure the requests are valid and sent from the legitimate microservices server. When no or incorrect token is sent, that http request will be blocked, and 403 status code which indicates access forbidden will be sent back.
 
+**Notes: Different authentication token is used in ACL and general-purpose API backend server. In other words, client requests to ACL (internal server) will never be go through.**
+
 ### React Next.js Frontend
 
 The frontend is written is React.js with Next.js. The frontend simulates the features of ride-sharing platform such as the user login, account creation, profile edit, creating trip, initiating or ending trip, and viewing past completed trips.
@@ -69,6 +73,8 @@ With this generalised backend server, there would be only one server endpoint su
 For example, when the user wants to create a passenger account, the http request containing passenger information will be sent to the generalised server `localhost:5000`. The server will then redirect the request to the passenger microservice for the passenger account creation. The result will then sent back to the originated frontend server.
 
 Similarly, the server will also **authenticate the bearer token** to ensure the requests are valid and sent from the frontend server. When no or incorrect token is sent, that http request will be blocked, and 403 status code which indicates access forbidden will be sent back.
+
+**Notes: Different authentication token is used in ACL and general-purpose API backend server. In other words, client requests to ACL (internal server) will never be go through.**
 
 ## Data Structures
 
