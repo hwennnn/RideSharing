@@ -220,7 +220,7 @@ func putDriver(res http.ResponseWriter, req *http.Request) {
 func main() {
 
 	// Use mysql as driverName and a valid DSN as dataSourceName:
-	db, _ = sql.Open("mysql", "root:password@tcp(127.0.0.1:3307)/RideSharing")
+	db, _ = sql.Open("mysql", "user:password@tcp(db:3306)/RideSharing")
 
 	fmt.Println("Database opened")
 

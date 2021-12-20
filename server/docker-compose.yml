@@ -1,6 +1,7 @@
 version: '3.9'
 services:
-  web:
+  general_server:
+    container_name: general_purpose_server
     build:
       context: ./
       target: dev

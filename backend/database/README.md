@@ -3,11 +3,7 @@
 ## Usage
 
 ```bash
-docker-compose up
-```
-
-```bash
-docker exec -it database_db_1 bash
+docker exec -it ridesharing_db bash
 
 mysql -uroot -p RideSharing < app/setup.sql
 ```

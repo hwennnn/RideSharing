@@ -1,0 +1,133 @@
+version: "3.9"
+services:
+  db:
+    container_name: ridesharing_db
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'RideSharing'
+      MYSQL_USER: 'user'
+      MYSQL_PASSWORD: 'password'
+      # Password for root access
+      MYSQL_ROOT_PASSWORD: 'password'
+    ports:
+      # <Port exposed> : < MySQL Port running inside container>
+      - '3307:3306'
+    expose:
+      # Opens port 3306 on the container
+      - '3306'
+      # Where our data will be persisted
+    volumes:
+      - ./backend/database/:/app
+    networks:
+      - fullstack
+  
+  driver_backend:
+    container_name: driver_microservice
+    # Configuration for building the docker image for the service
+    build:
+      context: ./backend/microservices/drivers/ # Use an image built from the specified dockerfile in the current directory.
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080" # Forward the exposed port 8080 on the container to port 8080 on the host machine
+    volumes:
+      - ./backend/microservices/drivers:/code
+    restart: always
+    depends_on:
+      - db
+    networks:
+      - fullstack
+  
+  passenger_backend:
+    container_name: passenger_microservice
+    # Configuration for building the docker image for the service
+    build:
+      context: ./backend/microservices/passengers/ # Use an image built from the specified dockerfile in the current directory.
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081" # Forward the exposed port 8080 on the container to port 8080 on the host machine
+    volumes:
+      - ./backend/microservices/passengers:/code
+    restart: always
+    depends_on:
+      - db
+    networks:
+      - fullstack
+
+  trip_backend:
+    container_name: trip_microservice
+    # Configuration for building the docker image for the service
+    build:
+      context: ./backend/microservices/trips/ # Use an image built from the specified dockerfile in the current directory.
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082" # Forward the exposed port 8080 on the container to port 8080 on the host machine
+    volumes:
+      - ./backend/microservices/trips:/code
+    restart: always
+    depends_on:
+      - db
+    networks:
+      - fullstack
+  
+  acl:
+    container_name: acl_server
+    build:
+      context: ./backend/server/
+      target: dev
+    volumes:
+      - ./backend/server/:/app
+    command: npm run start
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: development
+      DEBUG: nodejs-docker-express:*
+    depends_on:
+      - driver_backend
+      - passenger_backend
+      - trip_backend
+    networks:
+      - fullstack
+  
+  web:
+    container_name: web_frontend
+    build:
+      context: ./frontend/
+      target: dev
+    volumes:
+      - ./frontend/:/app
+    command: npm run dev
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      DEBUG: nodejs-docker-express:*
+    depends_on:
+      - general_server
+    networks:
+      - fullstack
+  
+  general_server:
+    container_name: general_purpose_server
+    build:
+      context: ./server/
+      target: dev
+    volumes:
+      - ./server/:/app
+    command: npm run start
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: development
+      DEBUG: nodejs-docker-express:*
+    depends_on:
+      - driver_backend
+      - passenger_backend
+      - trip_backend
+    networks:
+      - fullstack
+
+networks:
+  fullstack:
+    driver: bridge
