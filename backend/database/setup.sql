@@ -43,7 +43,7 @@ CREATE TABLE Trips
 );
 
 -- Insert Passenger Data
-INSERT INTO Passengers (PassengerID, FirstName, LastName, MobileNumber, EmailAddress, AvailableStatus) VALUES ('1', 'Hou Man', 'Wai', '6598754815', 'hwendev@gmail.com', 1);
+INSERT INTO Passengers (PassengerID, FirstName, LastName, MobileNumber, EmailAddress, AvailableStatus) VALUES ('1', 'Hou Man', 'Wai', '655132123', 'hwendev@gmail.com', 1);
 INSERT INTO Passengers (PassengerID, FirstName, LastName, MobileNumber, EmailAddress, AvailableStatus) VALUES ('2' ,'Rui Quan', 'Zachary Hong', '6512345678', 'zachary@gmail.com', 1);
 INSERT INTO Passengers (PassengerID, FirstName, LastName, MobileNumber, EmailAddress, AvailableStatus) VALUES ('3', 'Yong Teng', 'Tee', '6511111111', 'teeyongteng@gmail.com', 1);
 

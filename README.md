@@ -2,27 +2,27 @@
 
 ## Folder Structure
 
-|       Codebase       |                Description                |                       Port numbers used (localhost)                        |
-| :------------------: | :---------------------------------------: | :------------------------------------------------------------------------: |
-| [frontend](frontend) |          React Next.js Frontend           |                                    3000                                    |
-|  [backend](backend)  | Microservices connected to MySQL Database | **Driver**: 8080<br>**Passenger**: 8081<br>**Trip**: 8082<br>**ACL**: 4000 |
-|   [server](server)   |    General-Purpose API Backend Server     |                                    5000                                    |
+|       Codebase       |                Description                |
+| :------------------: | :---------------------------------------: |
+| [frontend](frontend) |          React Next.js Frontend           |
+|  [backend](backend)  | Microservices connected to MySQL Database |
+|   [server](server)   |    General-Purpose API Backend Server     |
 
 ## Usage
 
-There is a total of **6 servers** need to be started. You should be able to see `"Listening on port x ..."` after firing up the servers.
+### On Docker-Compose
 
-### Microservices Backend
+```bash
+docker-compose pull
+docker-compose up
+```
 
-Refer to this [README guide](backend/README.md) to start the 3 microsevice servers + 1 express server which acts as anti-corruption layer, as well as executing sql setup script.
+### Initialise the MySQL database with setup script
 
-### General-Purpose API Backend
-
-Refer to this [README guide](server/README.md) to start the express servers which acts as general-purpose API backend to redirect client requests to respective microservices.
-
-### Frontend
-
-Refer to this [README guide](frontend/README.md) to start the next.js frontend.
+```bash
+docker exec -it ridesharing_db bash
+mysql -uroot -p RideSharing < app/setup.sql
+```
 
 ## Architecture Diagram
 
@@ -76,75 +76,9 @@ Similarly, the server will also **authenticate the bearer token** to ensure the 
 
 **Notes: Different authentication tokens are used in ACL and general-purpose API backend server. In other words, client requests to ACL (internal communication server) will never go through as different set of tokens are used for the authentication in ACL and general API server.**
 
-## Data Structures
+## API Documentation
 
-### Driver
-
-|      Field Name       |  Type  |                                                                                                                                               Description                                                                                                                                               |
-| :-------------------: | :----: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
-|       driver_id       | string |                                                                                                                                  The unique ID which identifies driver                                                                                                                                  |
-|      first_name       | string |                                                                                                                                      The first name of the driver                                                                                                                                       |
-|       last_name       | string |                                                                                                                                       The last name of the driver                                                                                                                                       |
-|     mobile_number     | string |                                                                                                                                     The mobile number of the driver                                                                                                                                     |
-|     email_address     | string |                                                                                                                                     The email address of the driver                                                                                                                                     |
-| identification_number | string |                                                                                                           The identification number of the driver. It cannot be edited after driver creation.                                                                                                           |
-|  car_license_number   | string |                                                                                                                                  The car license number of the driver.                                                                                                                                  |
-|   available_status    |  int   | The available status number of the driver.**<br> 0 -> used by golang to indicate whether the integer variable has been initialised or not <br>1 -> Online and available <br> 2 -> Online and assigned a trip by system (but the trip has not been initiated yet) <br> 3 -> Online and during the trip** |
-
-### Passenger
-
-|    Field Name    |  Type  |                                                                                                  Description                                                                                                  |
-| :--------------: | :----: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
-|   passenger_id   | string |                                                                                   The unique ID which identifies passenger                                                                                    |
-|    first_name    | string |                                                                                        The first name of the passenger                                                                                        |
-|    last_name     | string |                                                                                        The last name of the passenger                                                                                         |
-|  mobile_number   | string |                                                                                      The mobile number of the passenger                                                                                       |
-|  email_address   | string |                                                                                      The email address of the passenger                                                                                       |
-| available_status |  int   | The available status number of the driver.**<br> 0 -> used by golang to indicate whether the integer variable has been initialised or not <br>1 -> Online and available <br>2 -> Online but during the trip** |
-
-### Trip
-
-|     Field Name      |   Type    |                                                                                                                                                                                                         Description                                                                                                                                                                                                         |
-| :-----------------: | :-------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
-|       trip_id       |  string   |                                                                                                                                                                                             The unique ID which identifies trip                                                                                                                                                                                             |
-|    passenger_id     |  string   |                                                                                                                                                                                          The unique ID which identifies passenger                                                                                                                                                                                           |
-|      driver_id      |  string   |                                                                                                                                                                                            The unique ID which identifies driver                                                                                                                                                                                            |
-| pickup_postal_code  |  string   |                                                                                                                                                                                             The pickup postal code of the trip                                                                                                                                                                                              |
-| dropoff_postal_code |  string   |                                                                                                                                                                                             The dropoff postal code of the trip                                                                                                                                                                                             |
-|    created_time     |  string   |                                                                                                                                                                                                The created time of the trip                                                                                                                                                                                                 |
-|   completed_time    |  string   |                                                                                                                                                                                   The completed time of the trip. Initially was set as 0.                                                                                                                                                                                   |
-|    trip_progress    |    int    | The trip progress of the trip.**<br> 0 -> used by golang to indicate whether the integer variable has been initialised or not <br>1 -> Created by passenger, but no driver is found to be assgined<br>2 -> A driver was already assigned for the trip, but the driver has not inititated the trip yet<br>3 -> The trip is ongoing (Driver has initiated the trip)<br> 4 -> The trip has ended (Driver has ended the trip)** |
-|      passenger      | Passenger |                                                                                                                                                             The passenger object of the trip. This field is used when returning results to the frontend server.                                                                                                                                                             |
-|       driver        |  Driver   |                                                                                                                                                              The driver object of the trip. This field is used when returning results to the frontend server.                                                                                                                                                               |
-
-## Microservice API Documentation
-
-### Driver Microservice API (Port 8080)
-
-|            API Endpoint             |                                                                                                                                                                                                    Description                                                                                                                                                                                                    | Additional Notes                                                                                                                           |
-| :---------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------ |
-|      `[GET] /api/v1/drivers/ `      |                                                                                                                                  Retrieve the drivers based on the request query parameters (if there is any). The returned results will be in the array of driver json object.                                                                                                                                   | Support filtering the drivers based on **available_status** by putting the filtered condition in the request query parameters              |
-| `[GET] /api/v1/drivers/:driverid `  |                                                                                                                                                           Retrieve the driver associated with the supplied driverID. Return 404 if no record is found.                                                                                                                                                            |
-| `[POST] /api/v1/drivers/:driverid ` | **Create a driver in MySQL database by specific driverID**<br>Case 1: If the compulsory driver information is not provided, it will return message which says the information is not correctly supplied<br>Case 2: It will fail and return conflict status code if a driver with same driverID is already found in the database<br>Case 3: Otherwise, it will return success message with status created code<br> | Must supply driver_id, first_name, last_name, mobile_number, email_address, identification_number, car_license_number during registration. |
-| `[PUT] /api/v1/drivers/:driverid `  |                                                           **Either creating or updating the driver depends whether the driverID exists**<br>Case 1: If driverID exists, update the driver using the information retrieved from request body<br>Case 2: If driverID does not exist, create the driver using the information retrieved from request body                                                            | Allow updating fields for first_name, last_name, mobile_number, email_address, car_license_number, and available_status                    |
-
-### Passenger Microservice API (Port 8081)
-
-|               API Endpoint                |                                                                                                                                                                                                           Description                                                                                                                                                                                                            | Additional Notes                                                                                   |
-| :---------------------------------------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | -------------------------------------------------------------------------------------------------- |
-|       `[GET] /api/v1/passengers/ `        |                                                                                                                                                          Retrieve the passengers from the database. The returned results will be in the array of passenger json object.                                                                                                                                                          |
-| `[GET] /api/v1/passengers/:passengerid `  |                                                                                                                                                                Retrieve the passenger associated with the supplied passengerID. Return 404 if no record is found.                                                                                                                                                                |
-| `[POST] /api/v1/passengers/:passengerid ` | **Create a passenger in MySQL database by specific passengerID**<br>Case 1: If the compulsory passenger information is not provided, it will return message which says the information is not correctly supplied<br>Case 2: It will fail and return conflict status code if a passenger with same passengerID is already found in the database<br>Case 3: Otherwise, it will return success message with status created code<br> | Must supply passenger_id, first_name, last_name, mobile_number and email_address                   |
-| `[PUT] /api/v1/passengers/:passengerid `  |                                                          **Either creating or updating the passenger depends whether the passengerID exists**<br>Case 1: If passengerID exists, update the passenger using the information retrieved from request body<br>Case 2: If passengerID does not exist, create the passenger using the information retrieved from request body                                                          | Allow updating fields for first_name, last_name, mobile_number, email_address and available_status |
-
-### Trip Microservice API (Port 8082)
-
-|          API Endpoint           |                                                                                                                                                                                               Description                                                                                                                                                                                               | Additional Notes                                                                                                                                             |
-| :-----------------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-|     `[GET] /api/v1/trips/ `     |                                                                                                                         Retrieve the trips based on the request parameters (if there is any) from the database. The returned results will be in the array of trip json object.                                                                                                                          | Support filtering the trips based on **driver_id**, **passenger_id** and **trip_progress** by putting the filtered condition in the request query parameters |
-| `[GET] /api/v1/trips/:tripid `  |                                                                                                                                                        Retrieve the trip associated with the supplied tripID. Return 404 if no record is found.                                                                                                                                                         |
-| `[POST] /api/v1/trips/:tripid ` | **Create a trip in MySQL database by specific tirpID**<br>Case 1: If the compulsory trip information is not provided, it will return message which says the information is not correctly supplied<br>Case 2: It will fail and return conflict status code if a trip with same tripID is already found in the database<br>Case 3: Otherwise, it will return success message with status created code<br> | Must supply trip_id, passenger_id, pickup_postal_code, dropoff_postal_code                                                                                   |
-| `[PUT] /api/v1/trips/:tripid `  |                                                            **Either creating or updating the trip depends whether the tripID exists**<br>Case 1: If tripID exists, update the trip using the information retrieved from request body<br>Case 2: If tripID does not exist, create the trip using the information retrieved from request body                                                             | Allow updating fields for trip_progress and driver_id                                                                                                        |
+Kindly refer to [this](api_documentation.md) for more details on the microservice API server.
 
 ## **Credits**
 
