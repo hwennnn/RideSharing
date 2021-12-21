@@ -13,28 +13,31 @@ tripRouter.get("/", async function (req, res) {
         query: req.query,
     }));
 
-    res.status(200).json(result.data);
+    res.status(result.status).json(result.data);
 });
 
 tripRouter.get("/:tripID", async function (req, res) {
     let tripID = req.params.tripID;
-    const result = await axios.get(`${tripEndpointBaseURL}/${tripID}`);
+    let body = req.body;
+    const result = await axios.get(`${tripEndpointBaseURL}/${tripID}`, body);
 
-    res.status(200).json(result.data);
+    res.status(result.status).json(result.data);
 });
 
 tripRouter.post("/:tripID", async function (req, res) {
     let tripID = req.params.tripID;
-    const result = await axios.post(`${tripEndpointBaseURL}/${tripID}`);
+    let body = req.body;
+    const result = await axios.post(`${tripEndpointBaseURL}/${tripID}`, body);
 
-    res.status(200).json(result.data);
+    res.status(result.status).json(result.data);
 });
 
 tripRouter.put("/:tripID", async function (req, res) {
     let tripID = req.params.tripID;
-    const result = await axios.put(`${tripEndpointBaseURL}/${tripID}`);
+    let body = req.body;
+    const result = await axios.put(`${tripEndpointBaseURL}/${tripID}`, body);
 
-    res.status(200).json(result.data);
+    res.status(result.status).json(result.data);
 });
 
 export default tripRouter;

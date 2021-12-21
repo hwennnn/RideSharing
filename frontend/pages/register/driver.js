@@ -5,7 +5,7 @@ import Head from 'next/head'
 import { uuid } from 'uuidv4';
 import axios from 'axios';
 import Router from 'next/router';
-import { baseUrl, requestConfig } from '../../utils/globals';
+import { clientRequestBaseUrl, requestConfig } from '../../utils/globals';
 
 export default function RegisterDriver() {
 
@@ -29,7 +29,7 @@ export default function RegisterDriver() {
                 "car_license_number": carLicenseNumber
             }
             try {
-                let response = await axios.post(`${baseUrl}/drivers/${driverID}`, body, requestConfig);
+                let response = await axios.post(`${clientRequestBaseUrl}/drivers/${driverID}`, body, requestConfig);
 
                 if (response.status == 201) {
                     console.log(response.data)

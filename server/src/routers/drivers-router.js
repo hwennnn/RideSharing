@@ -13,28 +13,30 @@ driverRouter.get("/", async function (req, res) {
         query: req.query,
     }));
 
-    res.status(200).json(result.data);
+    res.status(result.status).json(result.data);
 });
 
 driverRouter.get("/:driverID", async function (req, res) {
     let driverID = req.params.driverID;
     const result = await axios.get(`${driverEndpointBaseURL}/${driverID}`);
 
-    res.status(200).json(result.data);
+    res.status(result.status).json(result.data);
 });
 
 driverRouter.post("/:driverID", async function (req, res) {
     let driverID = req.params.driverID;
-    const result = await axios.post(`${driverEndpointBaseURL}/${driverID}`);
+    let body = req.body;
+    const result = await axios.post(`${driverEndpointBaseURL}/${driverID}`, body);
 
-    res.status(200).json(result.data);
+    res.status(result.status).json(result.data);
 });
 
 driverRouter.put("/:driverID", async function (req, res) {
     let driverID = req.params.driverID;
-    const result = await axios.put(`${driverEndpointBaseURL}/${driverID}`);
+    let body = req.body;
+    const result = await axios.put(`${driverEndpointBaseURL}/${driverID}`, body);
 
-    res.status(200).json(result.data);
+    res.status(result.status).json(result.data);
 });
 
 export default driverRouter;

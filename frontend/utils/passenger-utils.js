@@ -1,9 +1,9 @@
 import axios from 'axios';
 import { uuid } from 'uuidv4';
-import { baseUrl, requestConfig } from './globals';
+import { serverRequestBaseUrl, requestConfig, clientRequestBaseUrl } from './globals';
 
 export async function getStaticPathForPassengers() {
-    const response = await axios.get(`${baseUrl}/passengers/`, requestConfig);
+    const response = await axios.get(`${serverRequestBaseUrl}/passengers/`, requestConfig);
 
     return response.data.map((passenger) => {
         return {
@@ -14,9 +14,9 @@ export async function getStaticPathForPassengers() {
     })
 }
 
-export async function isPassengerExist(passengerID) {
+export async function isPassengerExist(passengerID, sentFromClient = true) {
     try {
-        const response = await axios.get(`${baseUrl}/passengers/${passengerID}`, requestConfig)
+        const response = await axios.get(`${sentFromClient ? clientRequestBaseUrl : serverRequestBaseUrl}/passengers/${passengerID}`, requestConfig)
         console.log(response.status)
     } catch (err) {
         return false
@@ -26,13 +26,13 @@ export async function isPassengerExist(passengerID) {
 }
 
 export async function getPassenger(passengerID) {
-    const response = await axios.get(`${baseUrl}/passengers/${passengerID}`, requestConfig)
+    const response = await axios.get(`${serverRequestBaseUrl}/passengers/${passengerID}`, requestConfig)
 
     return response.data
 }
 
 export async function retrieveCompletedTripsForPassenger(passengerID) {
-    const response = await axios.get(`${baseUrl}/trips?passenger_id=${passengerID}&trip_progress=4`, requestConfig)
+    const response = await axios.get(`${serverRequestBaseUrl}/trips?passenger_id=${passengerID}&trip_progress=4`, requestConfig)
 
     return response.data
 }
@@ -47,7 +47,7 @@ export async function createTripAsPassenger(passengerID, pickupPostalCode, dropo
         "dropoff_postal_code": dropoffPostalCode
     }
 
-    const response = await axios.post(`${baseUrl}/trips/${trip_id}`, body, requestConfig)
+    const response = await axios.post(`${clientRequestBaseUrl}/trips/${trip_id}`, body, requestConfig)
 
     return response
 }

@@ -5,7 +5,7 @@ import Head from 'next/head'
 import Router from 'next/router';
 import { uuid } from 'uuidv4';
 import axios from 'axios';
-import { baseUrl, requestConfig } from '../../utils/globals';
+import { clientRequestBaseUrl, requestConfig } from '../../utils/globals';
 
 export default function RegisterPassenger() {
 
@@ -27,7 +27,7 @@ export default function RegisterPassenger() {
                 "email_address": emailAddress,
             }
             try {
-                let response = await axios.post(`${baseUrl}/passengers/${passengerID}`, body, requestConfig);
+                let response = await axios.post(`${clientRequestBaseUrl}/passengers/${passengerID}`, body, requestConfig);
                 if (response.status == 201) {
                     console.log(response.data)
                     Router.push(`/passenger/${passengerID}`)

@@ -5,17 +5,11 @@ import styles from '../../../styles/Home.module.css'
 
 export async function getStaticProps({ params }) {
     const driverID = params.id
-    // const driver = await getDriver(driverID);
+    const driver = await getDriver(driverID, false);
+
     return {
         props: {
-            "driver_id": "1",
-            "first_name": "Run Lin",
-            "last_name": "Xiong",
-            "mobile_number": "6522222222",
-            "email_address": "runlin@gmail.com",
-            "identification_number": "T12345678A",
-            "car_license_number": "h124j451k32jj123f",
-            "available_status": 0
+            ...driver
         }
     }
 }
@@ -24,13 +18,7 @@ export async function getStaticPaths() {
     const paths = await getStaticPathForDrivers();
 
     return {
-        paths: [
-            {
-                params: {
-                    id: "1"
-                }
-            }
-        ],
+        paths,
         fallback: false
     }
 }

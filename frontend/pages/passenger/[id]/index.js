@@ -5,7 +5,7 @@ import styles from '../../../styles/Home.module.css'
 
 export async function getStaticProps({ params }) {
     const passengerID = params.id
-    const passenger = await getPassenger(passengerID);
+    const passenger = await getPassenger(passengerID, false);
     return {
         props: {
             ...passenger
