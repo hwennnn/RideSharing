@@ -2,7 +2,7 @@ version: "3.9"
 services:
   db:
     container_name: ridesharing_db
-    image: mysql:5.7
+    image: mariadb:10.6.4-focal
     restart: always
     environment:
       MYSQL_DATABASE: 'RideSharing'
@@ -19,8 +19,6 @@ services:
       # Where our data will be persisted
     volumes:
       - ./backend/database/:/app
-    networks:
-      - fullstack
   
   driver_backend:
     container_name: driver_microservice
@@ -35,8 +33,6 @@ services:
     restart: always
     depends_on:
       - db
-    networks:
-      - fullstack
   
   passenger_backend:
     container_name: passenger_microservice
@@ -51,8 +47,6 @@ services:
     restart: always
     depends_on:
       - db
-    networks:
-      - fullstack
 
   trip_backend:
     container_name: trip_microservice
@@ -67,8 +61,6 @@ services:
     restart: always
     depends_on:
       - db
-    networks:
-      - fullstack
   
   acl:
     container_name: acl_server
@@ -87,8 +79,6 @@ services:
       - driver_backend
       - passenger_backend
       - trip_backend
-    networks:
-      - fullstack
   
   web:
     container_name: web_frontend
@@ -105,8 +95,6 @@ services:
       DEBUG: nodejs-docker-express:*
     depends_on:
       - general_server
-    networks:
-      - fullstack
   
   general_server:
     container_name: general_purpose_server
@@ -125,9 +113,13 @@ services:
       - driver_backend
       - passenger_backend
       - trip_backend
-    networks:
-      - fullstack
 
-networks:
-  fullstack:
-    driver: bridge
+  proxy:
+    container_name: ridesharing_proxy
+    build: 
+      context: backend/proxy
+      dockerfile: Dockerfile
+    ports:
+      - 80:80
+    depends_on: 
+      - driver_backend

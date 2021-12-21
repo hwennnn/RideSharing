@@ -1,0 +1,16 @@
+server {
+    listen 80;
+
+    location /server/ {
+        proxy_pass http://general_server:5000/;
+    }
+    location /driver_microservice/ {
+        proxy_pass http://driver_backend:8080/;
+    }
+    location /passenger_microservice/ {
+        proxy_pass http://passenger_backend:8081/;
+    }
+    location /trip_microservice/ {
+        proxy_pass http://trip_backend:8082/;
+    }
+}

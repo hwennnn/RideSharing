@@ -19,7 +19,7 @@ import (
 )
 
 const authenticationToken = "2a6b36bf-61b9-4d0e-904c-7843e7b97308"
-const serverEndpointBaseURL = "http://localhost:4000/api/v1"
+const serverEndpointBaseURL = "http://acl:4000/api/v1"
 
 var driverEndpointBaseURL = fmt.Sprintf("%s/drivers", serverEndpointBaseURL)
 var passengerEndpointBaseURL = fmt.Sprintf("%s/passengers", serverEndpointBaseURL)
