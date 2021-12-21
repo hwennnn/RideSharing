@@ -19,6 +19,8 @@ services:
       # Where our data will be persisted
     volumes:
       - ./backend/database/:/app
+    networks:
+      - sub-etha
   
   driver_backend:
     container_name: driver_microservice
@@ -33,7 +35,9 @@ services:
     restart: always
     depends_on:
       - db
-  
+    networks:
+      - sub-etha
+
   passenger_backend:
     container_name: passenger_microservice
     # Configuration for building the docker image for the service
@@ -47,6 +51,8 @@ services:
     restart: always
     depends_on:
       - db
+    networks:
+      - sub-etha
 
   trip_backend:
     container_name: trip_microservice
@@ -61,7 +67,9 @@ services:
     restart: always
     depends_on:
       - db
-  
+    networks:
+      - sub-etha
+
   acl:
     container_name: acl_server
     build:
@@ -79,8 +87,10 @@ services:
       - driver_backend
       - passenger_backend
       - trip_backend
-  
-  web:
+    networks:
+      - sub-etha
+
+  frontend:
     container_name: web_frontend
     build:
       context: ./frontend/
@@ -94,8 +104,10 @@ services:
       NODE_ENV: development
       DEBUG: nodejs-docker-express:*
     depends_on:
-      - general_server
-  
+      - proxy
+    networks:
+      - sub-etha  
+
   general_server:
     container_name: general_purpose_server
     build:
@@ -113,6 +125,8 @@ services:
       - driver_backend
       - passenger_backend
       - trip_backend
+    networks:
+      - sub-etha
 
   proxy:
     container_name: ridesharing_proxy
@@ -122,4 +136,10 @@ services:
     ports:
       - 80:80
     depends_on: 
-      - driver_backend
+      - general_server
+      - acl
+    networks:
+      - sub-etha
+
+networks:
+  sub-etha:

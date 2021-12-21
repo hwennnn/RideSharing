@@ -5,29 +5,35 @@ const url = require('url');
 const tripRouter = express.Router();
 
 // Redirect the requests to the trip microservice
-// HTTP 307 Temporary Redirect is used
-// so that the method and the body of the original request are reused to perform the redirected request
 
-tripRouter.get("/", function (req, res) {
-    res.redirect(url.format({
+tripRouter.get("/", async function (req, res) {
+    const result = await axios.get(url.format({
         pathname: `${tripEndpointBaseURL}`,
         query: req.query,
-    }))
+    }));
+
+    res.status(200).json(result.data);
 });
 
-tripRouter.get("/:tripID", function (req, res) {
-    let tripID = req.params.tripID
-    res.redirect(307, `${tripEndpointBaseURL}/${tripID}`)
+tripRouter.get("/:tripID", async function (req, res) {
+    let tripID = req.params.tripID;
+    const result = await axios.get(`${tripEndpointBaseURL}/${tripID}`);
+
+    res.status(200).json(result.data);
 });
 
-tripRouter.post("/:tripID", function (req, res) {
-    let tripID = req.params.tripID
-    res.redirect(307, `${tripEndpointBaseURL}/${tripID}`)
+tripRouter.post("/:tripID", async function (req, res) {
+    let tripID = req.params.tripID;
+    const result = await axios.post(`${tripEndpointBaseURL}/${tripID}`);
+
+    res.status(200).json(result.data);
 });
 
-tripRouter.put("/:tripID", function (req, res) {
-    let tripID = req.params.tripID
-    res.redirect(307, `${tripEndpointBaseURL}/${tripID}`)
+tripRouter.put("/:tripID", async function (req, res) {
+    let tripID = req.params.tripID;
+    const result = await axios.put(`${tripEndpointBaseURL}/${tripID}`);
+
+    res.status(200).json(result.data);
 });
 
 export default tripRouter;

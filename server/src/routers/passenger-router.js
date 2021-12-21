@@ -4,26 +4,35 @@ import express from 'express';
 const passengerRouter = express.Router();
 
 // Redirect the requests to the passenger microservice
-// HTTP 307 Temporary Redirect is used
-// so that the method and the body of the original request are reused to perform the redirected request
 
-passengerRouter.get("/", function (req, res) {
-    res.redirect(`${passengerEndpointBaseURL}/`)
+passengerRouter.get("/", async function (req, res) {
+    const result = await axios.get(url.format({
+        pathname: `${passengerEndpointBaseURL}`,
+        query: req.query,
+    }));
+
+    res.status(200).json(result.data);
 });
 
-passengerRouter.get("/:passengerID", function (req, res) {
-    let passengerID = req.params.passengerID
-    res.redirect(307, `${passengerEndpointBaseURL}/${passengerID}`)
+passengerRouter.get("/:passengerID", async function (req, res) {
+    let passengerID = req.params.passengerID;
+    const result = await axios.get(`${passengerEndpointBaseURL}/${passengerID}`);
+
+    res.status(200).json(result.data);
 });
 
-passengerRouter.post("/:passengerID", function (req, res) {
-    let passengerID = req.params.passengerID
-    res.redirect(307, `${passengerEndpointBaseURL}/${passengerID}`)
+passengerRouter.post("/:passengerID", async function (req, res) {
+    let passengerID = req.params.passengerID;
+    const result = await axios.post(`${passengerEndpointBaseURL}/${passengerID}`);
+
+    res.status(200).json(result.data);
 });
 
-passengerRouter.put("/:passengerID", function (req, res) {
-    let passengerID = req.params.passengerID
-    res.redirect(307, `${passengerEndpointBaseURL}/${passengerID}`)
+passengerRouter.put("/:passengerID", async function (req, res) {
+    let passengerID = req.params.passengerID;
+    const result = await axios.put(`${passengerEndpointBaseURL}/${passengerID}`);
+
+    res.status(200).json(result.data);
 });
 
 export default passengerRouter;
