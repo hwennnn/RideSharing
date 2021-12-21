@@ -129,13 +129,12 @@ http://localhost:80/server/api/v1/drivers/4
 ```json
 {
   "driver_id": "4",
-  "first_name": "Run Lin",
-  "last_name": "Xiong",
-  "mobile_number": "6522222222",
-  "email_address": "runlin@gmail.com",
-  "identification_number": "T12345678A",
-  "car_license_number": "h124j451k32jj123f",
-  "available_status": 2
+  "first_name": "hello",
+  "last_name": "world",
+  "mobile_number": "6544444444",
+  "email_address": "helloworld@gmail.com",
+  "identification_number": "T14124124A",
+  "car_license_number": "asjkidh12hjdas"
 }
 ```
 
