@@ -1,15 +1,13 @@
 import { passengerEndpointBaseURL } from '../config/baseURL';
 import express from 'express';
+import axios from 'axios';
 
 const passengerRouter = express.Router();
 
 // Redirect the requests to the passenger microservice
 
 passengerRouter.get("/", async function (req, res) {
-    const result = await axios.get(url.format({
-        pathname: `${passengerEndpointBaseURL}`,
-        query: req.query,
-    }));
+    const result = await axios.get(`${passengerEndpointBaseURL}/`);
 
     res.status(200).json(result.data);
 });

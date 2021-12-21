@@ -1,5 +1,6 @@
 import { tripEndpointBaseURL } from '../config/baseURL';
 import express from 'express';
+import axios from 'axios';
 const url = require('url');
 
 const tripRouter = express.Router();
