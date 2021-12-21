@@ -15,8 +15,4 @@ server {
     location /server/ {
       proxy_pass http://general_server:5000/;
     }
-
-    location /proxy/ {
-      proxy_pass http://proxy:80/;
-    }
 }
