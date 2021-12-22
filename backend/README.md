@@ -12,3 +12,4 @@ This folder contains all the backend logic written in microservices, and a serve
 | [Passenger Microservice](microservices/passengers) |                `Passenger` microservice server connected to MySQL database                 |
 |      [Trip Microservice](microservices/trips)      |                   `Trip` microservice server connected to MySQL database                   |
 |      [Internal Microservices Server](server)       | A server acts as an `anti-corruption layer` <br> to handle internal microservices requests |
+|                [Nginx Proxy](proxy)                |               A proxy server to redirect the client requests to the backend                |
