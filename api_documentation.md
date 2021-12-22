@@ -344,7 +344,7 @@ Case 2: If passengerID does not exist, create the passenger using the informatio
 
 ---
 
-## 3. Trip Microservice
+## 3. Trip
 
 ### Data Structure
 
