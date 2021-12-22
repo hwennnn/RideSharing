@@ -528,7 +528,7 @@ Case 3: Otherwise, it will return success message with status created code
 
 ---
 
-### 3.4 **[PUT]** api/v1/passengers/:passengerid
+### 3.4 **[PUT]** api/v1/trip/:tripid
 
 It is either used for creating or updating the trip depends whether the tripID exists. It allows updating fields for trip_progress and driver_id by putting the fields in the request body.
 
@@ -553,9 +553,9 @@ Case 1: If tripID exists, update the trip using the information retrieved from r
 Case 2: If tripID does not exist, create the trip using the information retrieved from request body
 
 ```text
-201 - Passenger added: 4
-202 - Passenger updated: 4
-422 - Please supply passenger information in JSON format
+201 - Trip added: 4
+202 - Trip updated: 4
+422 - Please supply trip information in JSON format
 422 - The data in body and parameters do not match
 ```
 
