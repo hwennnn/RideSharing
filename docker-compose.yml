@@ -29,8 +29,9 @@ services:
     build:
       context: ./backend/microservices/drivers/ # Use an image built from the specified dockerfile in the current directory.
       dockerfile: Dockerfile
-    ports:
-      - "8080:8080" # Forward the exposed port 8080 on the container to port 8080 on the host machine
+    expose:
+      # Opens port 8080 on the container
+      - '8080'
     volumes:
       - ./backend/microservices/drivers:/code
     restart: always
@@ -45,8 +46,9 @@ services:
     build:
       context: ./backend/microservices/passengers/ # Use an image built from the specified dockerfile in the current directory.
       dockerfile: Dockerfile
-    ports:
-      - "8081:8081" # Forward the exposed port 8080 on the container to port 8080 on the host machine
+    expose:
+      # Opens port 8081 on the container
+      - '8081'
     volumes:
       - ./backend/microservices/passengers:/code
     restart: always
@@ -61,8 +63,9 @@ services:
     build:
       context: ./backend/microservices/trips/ # Use an image built from the specified dockerfile in the current directory.
       dockerfile: Dockerfile
-    ports:
-      - "8082:8082" # Forward the exposed port 8080 on the container to port 8080 on the host machine
+    expose:
+      # Opens port 8082 on the container
+      - '8082'
     volumes:
       - ./backend/microservices/trips:/code
     restart: always
@@ -79,8 +82,9 @@ services:
     volumes:
       - ./backend/server/:/app
     command: npm run start
-    ports:
-      - "4000:4000"
+    expose:
+      # Opens port 4000 on the container
+      - '4000'
     environment:
       NODE_ENV: development
       DEBUG: nodejs-docker-express:*
@@ -99,8 +103,9 @@ services:
     volumes:
       - ./frontend/:/app
     command: npm run dev
-    ports:
-      - "3000:3000"
+    expose:
+      # Opens port 3000 on the container
+      - '3000'
     environment:
       NODE_ENV: development
       DEBUG: nodejs-docker-express:*
@@ -117,8 +122,9 @@ services:
     volumes:
       - ./server/:/app
     command: npm run start
-    ports:
-      - "5000:5000"
+    expose:
+      # Opens port 5000 on the container
+      - '5000'
     environment:
       NODE_ENV: development
       DEBUG: nodejs-docker-express:*
