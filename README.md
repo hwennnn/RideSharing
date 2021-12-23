@@ -24,6 +24,8 @@ docker exec -it ridesharing_db bash
 mysql -uroot -p RideSharing < app/setup.sql
 ```
 
+Finally, open http://localhost:80 for the frontend client.
+
 ## Architecture Diagram
 
 ![Architecture Diagram](docs/architecture_diagram.png)
