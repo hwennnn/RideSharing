@@ -81,6 +81,7 @@ services:
       target: dev
     volumes:
       - ./backend/server/:/app
+      - /app/node_modules
     command: npm run start
     expose:
       # Opens port 4000 on the container
@@ -102,6 +103,7 @@ services:
       target: dev
     volumes:
       - ./frontend/:/app
+      - /app/node_modules
     command: npm run dev
     expose:
       # Opens port 3000 on the container
@@ -121,6 +123,7 @@ services:
       target: dev
     volumes:
       - ./server/:/app
+      - /app/node_modules
     command: npm run start
     expose:
       # Opens port 5000 on the container
@@ -147,6 +150,9 @@ services:
       - acl
     networks:
       - sub-etha
+
+volumes:
+  node_modules:
 
 networks:
   sub-etha:
